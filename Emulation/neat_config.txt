@@ -3,7 +3,7 @@
 fitness_criterion = max 
 #fitness access before terminate (lenght of level)
 fitness_threshold = 12000 
-pop_size = 200
+pop_size = 50
 reset_on_extinction = False
 
 [DefaultGenome]
