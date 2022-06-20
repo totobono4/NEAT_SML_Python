@@ -1,4 +1,5 @@
 import sys
+import os
 from pyboy import PyBoy, WindowEvent
 import neat
 import visualize
@@ -17,7 +18,6 @@ sml = pyboy.game_wrapper()
 sml.start_game()
 
 mario = pyboy.game_wrapper()
-print(mario.world)
 
 def step(genomes, config):
 	for genome_id, genome in genomes:
@@ -43,6 +43,7 @@ def step(genomes, config):
                 "right":out[5]
             } #outputs
 			sendInputs(manipulations)
+			pyboy.tick()
 			info = readLevelInfos()
 			genome.fitness = info["mposition"]["x"]   
 			if genome.fitness <= maxFitness:
@@ -103,6 +104,7 @@ def run(config_path):
 
 
 if __name__ == '__main__':
-	while not pyboy.tick():
-		pass
+	dirname = os.path.dirname(__file__)
+	config_path = os.path.join(dirname, "neat_config.txt")
+	run(config_path)
 	pyboy.stop()
