@@ -73,7 +73,7 @@ def run(config_path):
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
 
-    p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint--4')
+    p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
     p.run(step, 10)
 
 if __name__ == "__main__":
