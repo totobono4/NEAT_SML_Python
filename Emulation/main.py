@@ -1,5 +1,6 @@
 import sys
 import os
+import io
 from pyboy import PyBoy, WindowEvent
 import neat
 import visualize
@@ -13,18 +14,21 @@ if not SML_File.exists:
 
 quiet = "--quiet" in sys.argv
 pyboy = PyBoy(Path(SML_File).as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2")
-pyboy.set_emulation_speed(0)
+pyboy.set_emulation_speed(1)
 sml = pyboy.game_wrapper()
 sml.start_game()
 
-mario = pyboy.game_wrapper()
+debut = io.BytesIO()
+debut.seek(0)
+pyboy.save_state(debut)
 
 def step(genomes, config):
 	for genome_id, genome in genomes:
-		with open("./debut.state") as statefile:
-			pyboy.save_state(statefile)
+		print(genome_id)
+		debut.seek(0)
+		pyboy.load_state(debut)
 		info = readLevelInfos()
-		genome.fitness = mario.fitness       
+		genome.fitness = sml.fitness       
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
 		maxStuckFrames = 1000
@@ -45,18 +49,22 @@ def step(genomes, config):
 			sendInputs(manipulations)
 			pyboy.tick()
 			info = readLevelInfos()
-			genome.fitness = info["mposition"]["x"]   
+			genome.fitness = sml.fitness
 			if genome.fitness <= maxFitness:
 				stuckFrames += 1
 			else:
 				stuckFrames = 0
 
-def readLevelInfos():   
-    levelInfo = {
-        "dead":mario.lives_left <= 0, 
-        "tiles":[]
+def readLevelInfos(): 
+	tiles = []
+	for row in sml.game_area():
+		for cell in row:
+			tiles.append(cell)
+	levelInfo = {
+        "dead":sml.lives_left <= 1, 
+        "tiles":tiles
     }
-    return levelInfo
+	return levelInfo
 
 def sendInputs(manipulations):
 	if manipulations["a"]:
@@ -107,4 +115,3 @@ if __name__ == '__main__':
 	dirname = os.path.dirname(__file__)
 	config_path = os.path.join(dirname, "neat_config.txt")
 	run(config_path)
-	pyboy.stop()

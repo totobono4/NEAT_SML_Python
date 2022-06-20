@@ -2,7 +2,7 @@
 #how a best item is chosen
 fitness_criterion = max 
 #fitness access before terminate (lenght of level)
-fitness_threshold = 300 
+fitness_threshold = 12000 
 pop_size = 200
 reset_on_extinction = False
 
@@ -43,7 +43,7 @@ node_delete_prob        = 0.2
 # network parameters
 num_hidden              = 0
 num_inputs              = 320
-num_outputs             = 5
+num_outputs             = 6
 
 # node response options
 response_init_mean      = 1.0
