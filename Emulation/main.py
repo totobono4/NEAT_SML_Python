@@ -60,8 +60,6 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 
 	display_width = display_heigh = reduceSize
 
-	print(outs)
-
 	for y in range(display_heigh):
 		for x in range(display_width):
 			rawvalue = tilesvector[(y*reduceSize)+x]
@@ -76,16 +74,23 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
 
-	for i in range(outs):
+	buttonIndex = 0
+	for button in outs:
 		nuance = 0
-		posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x + 400)
-		posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y + 400)
+		if outs[button] > 0:
+			nuance = 255
+		posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * display_width + 400)
+		posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * buttonIndex + 4)
 		sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
 		sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
+		buttonIndex += 1
+		font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*3/4))
+		img = font.render(button, False, (255, 255, 255))
+		screen.blit(img, (posx, posy, sizex, sizey))
 		pygame.draw.rect(
 			screen,
 			pygame.Color((nuance, nuance, nuance)),
-			pygame.Rect(posx, posy, sizex, sizey)
+			pygame.Rect(posx+10, posy, sizex, sizey)
 		)
 
 	for y in range(display_heigh):
@@ -100,11 +105,6 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 			posyin = math.trunc(posy + PYGAME_SCREEN_WIDTH / (display_width)/4*3/20)
 			sizexin = math.trunc(sizex*9/10)
 			sizeyin = math.trunc(sizey*9/10)
-			pygame.draw.rect(
-				screen,
-				pygame.Color((255, 255, 255)),
-				pygame.Rect(posx, posy, sizex, sizey)
-			)
 			pygame.draw.rect(
 				screen,
 				pygame.Color((0, 0, 0)),
@@ -122,7 +122,7 @@ def step(genomes, config):
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
-		maxStuckFrames = 300
+		maxStuckFrames = 150
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:
@@ -140,7 +140,7 @@ def step(genomes, config):
 				} #outputs
 				sendInputs(manipulations)
 				pyboy.tick()
-				displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys, info["tiles"])
+				displayNetwork(config.genome_config.input_keys, genomes, manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
 				if genome.fitness <= maxFitness:
@@ -205,17 +205,17 @@ def readLevelInfos():
 	return levelInfo
 
 def sendInputs(manipulations):
-	if manipulations["a"]:
+	if manipulations["a"]>0:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	if manipulations["b"]:
+	if manipulations["b"]>0:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	if manipulations["up"]:
+	if manipulations["up"]>0:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	if manipulations["down"]:
+	if manipulations["down"]>0:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	if manipulations["left"]:
+	if manipulations["left"]>0:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	if manipulations["right"]:
+	if manipulations["right"]>0:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 def run(config_path):
