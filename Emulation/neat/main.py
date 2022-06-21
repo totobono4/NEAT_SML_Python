@@ -251,7 +251,7 @@ def step(genomes, config):
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
-				if genome.fitness >= maxFitness:
+				if genome.fitness <= maxFitness:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
