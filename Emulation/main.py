@@ -4,6 +4,9 @@ from pyboy import PyBoy, WindowEvent
 import neat
 import visualize
 from pathlib import Path
+from graphviz import Digraph
+
+root = __file__
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -29,6 +32,9 @@ sml.start_game()
 debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
 debut.close()
+
+#def displayNetwork():
+
 
 def step(genomes, config):
 
@@ -107,14 +113,14 @@ def run(config_path):
 	pop.add_reporter(neat.StdOutReporter(True))
 	stats = neat.StatisticsReporter()
 	pop.add_reporter(stats)
-	pop.add_reporter(neat.Checkpointer(5, filename_prefix=str(Path(os.path.dirname(__file__) ,'/checkpoints/neat-checkpoint-4'))))
+	pop.add_reporter(neat.Checkpointer(5, filename_prefix='./checkpoints/neat-checkpoint-'))
 
 	winner = pop.run(step)
 
     # Show output of the most fit genome against training data.
 	print('\nOutput:')
 
-	node_names = {0: 'A', 1: 'B', 2:'X', 3:'Y', 4:'UP', 5:'DOWN', 6:'LEFT', 7:'RIGHT'}
+	node_names = {0: 'A', 1: 'B', 2:'UP', 3:'DOWN', 4:'LEFT', 5:'RIGHT'}
 	tiles = readLevelInfos()["tiles"]
 	for i in range(len(tiles)):
 		node_names[-len(tiles)+i] = "tile_"+str(i)
@@ -122,10 +128,9 @@ def run(config_path):
 	visualize.plot_stats(stats, ylog=False, view=True)
 	visualize.plot_species(stats, view=True)
 
-	p = neat.Checkpointer.restore_checkpoint(str(Path(os.path.dirname(__file__) ,'/checkpoints/neat-checkpoint-4')))
+	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
 	pyboy.set_emulation_speed(0)
 	p.run(step, 10)
-
 
 if __name__ == '__main__':
 	print(sml)
