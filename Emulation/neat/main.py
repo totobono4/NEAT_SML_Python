@@ -295,8 +295,6 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 				ntiles[i] = coin
 			else:
 				ntiles[i] = empty
-			if tile == 352:
-				print(ntiles[i])
 	return ntiles
 
 def readLevelInfos(): 
