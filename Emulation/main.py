@@ -31,12 +31,16 @@ pyboy.save_state(debut)
 debut.close()
 
 def step(genomes, config):
+
+	geneCount = 0
 	for genome_id, genome in genomes:
+		print("Gene : "+str(geneCount)+"/"+str(config.pop_size))
+		geneCount += 1
 		info = readLevelInfos()
-		genome.fitness = sml.fitness       
+		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
-		maxStuckFrames = 1000
+		maxStuckFrames = 300
 		maxFitness = genome.fitness
         
 		while not info["dead"]:
@@ -54,10 +58,11 @@ def step(genomes, config):
 			sendInputs(manipulations)
 			pyboy.tick()
 			info = readLevelInfos()
-			genome.fitness = sml.fitness
+			genome.fitness = sml.level_progress
 			if genome.fitness <= maxFitness:
 				stuckFrames += 1
 			else:
+				maxFitness = genome.fitness
 				stuckFrames = 0
 		
 		debut = open("./debut.save", "rb")
@@ -118,7 +123,7 @@ def run(config_path):
 	visualize.plot_species(stats, view=True)
 
 	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
-	pyboy.set_emulation_speed(1)
+	pyboy.set_emulation_speed(0)
 	p.run(step, 10)
 
 
