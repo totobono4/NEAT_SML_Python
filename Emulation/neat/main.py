@@ -83,7 +83,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		empty: (255,255,255),
 		mario:(0,0,255),
 		enemy:(255,0,0),
-		platform:(0,0,0),
+		platform:(121,26,126),
 		block:(244,255,0),
 		coin:(241,194,50)
 	}
