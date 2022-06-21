@@ -70,7 +70,7 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
 
-	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
+	colors_filter = {empty: (255,255,255), mario:(0,0,255), enemy:(255,0,0), platform:(0,0,0), block:(244,255,0), coin:(241,194,50)}
 	controller = {
 		'offset': (0,1),
 		'overlay': (
