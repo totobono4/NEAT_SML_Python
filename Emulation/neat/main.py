@@ -27,7 +27,7 @@ use_coins_in_fitness = False
 use_score_in_fitness = False
 
 activation = {
-	mario:(True, empty, lambda tile: tile in range(0, 7) or tile in range(9, 13) or tile in range(17 ,23) \
+	mario:(True, empty, lambda tile: tile in range(0, 7) or tile in range(9, 13) or tile in range(16 ,24) \
 		or tile in range(26, 30) or tile in range(31, 44) or tile in range(48, 60) or tile in range(30, 36)),
 
 	enemy:(True, empty, lambda tile: tile in range(144, 211)),
@@ -243,7 +243,6 @@ def step(genomes, config):
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:
-			lastScore = sml.score
 			if stuckFrames >= maxStuckFrames:
 				break
 			if info["tiles"] is not None:
@@ -265,11 +264,10 @@ def step(genomes, config):
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
-				if genome.fitness >= maxFitness and sml.score == lastScore:
+				if genome.fitness >= maxFitness:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
-					lastScore = sml.score
 					stuckFrames = 0
 			else:
 				break
