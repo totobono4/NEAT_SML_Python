@@ -134,10 +134,13 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	perceptrons = {}
 
 	hiddenoffset = (0,2)
+	hiddentiling = (4,2)
 	for hidden in range(len(hiddens)):
+		x = hidden % display_width
+		y = math.trunc(hidden / display_width)
 		nuance = (255,255,255)
-		posx = math.trunc(tilingoffsetx*hiddenoffset[0] + tilingx*(hidden+1/20))
-		posy = math.trunc(tilingoffsety*hiddenoffset[1] + tilingy*(1/20))
+		posx = math.trunc(tilingoffsetx*hiddenoffset[0] + tilingx*(x+1/20))
+		posy = math.trunc(tilingoffsety*hiddenoffset[1] + tilingy*(y+1/20))
 		sizex = math.trunc(tilingx*(9/10))
 		sizey = math.trunc(tilingy*(9/10))
 
