@@ -57,29 +57,41 @@ debut.close()
 def displayNetwork(inputs, hiddens, outs, tilesvector):
 	screen.fill((0,0,0))
 
-	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
-	controller = {
-		'overlay': (
-			((0, 0, 13, 7),(255,255,255)),
-			((1, 1, 11, 5),(0,0,0)),
-		),
-		'left': ((2,3),(-1,0)),
-		'up': ((3,2),(0,-1)),
-		'right': ((4,3),(1,0)),
-		'down': ((3,4),(0,1)),
-		'a': ((8,3),(0,1)),
-		'b': ((10,3),(0,1))
-	}
-
 	display_width = display_heigh = reduceSize
 
-	tiling = 3
+	tiling = 2
 
 	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
 	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
 
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
+
+	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
+	controller = {
+		'offset': (0,1),
+		'overlay': (
+			# controller outline
+			((0.1, 0.1, 12.8, 6.8),(200,200,200)),
+			((1.1, 1.1, 10.8, 4.8),(50,50,50)),
+			# cross outline
+			((2.9, 1.9, 1, 3),(150,150,150)),
+			((1.9, 2.9, 3, 1),(150,150,150)),
+			((3, 2, 1, 3),(100,100,100)),
+			((2, 3, 3, 1),(100,100,100)),
+			# buttons outline
+			((7.8,3.8,1,1),(255,255,255)),
+			((7.9,3.9,1,1),(100,100,100)),
+			((9.8,3.8,1,1),(255,255,255)),
+			((9.9,3.9,1,1),(100,100,100))
+		),
+		'left': ((2.2,3.2,.7,.7),((200,200,200),(50,50,50))),
+		'up': ((3.2,2.2,.7,.7),((200,200,200),(50,50,50))),
+		'right': ((4.2,3.2,.7,.7),((200,200,200),(50,50,50))),
+		'down': ((3.2,4.2,.7,.7),((200,200,200),(50,50,50))),
+		'a': ((8.1,4.1,.7,.7),((255,0,0),(150,0,0))),
+		'b': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0)))
+	}
 
 	for y in range(display_heigh):
 		for x in range(display_width):
@@ -100,32 +112,25 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 			screen,
 			miscalenious[1],
 			(
-				tilingoffsetx*1 + tilingx*(1/20 + miscalenious[0][0]),
-				tilingoffsety*0 + tilingy*(1/20 + miscalenious[0][1]),
-				tilingx*(miscalenious[0][2]-1/10),
-				tilingy*(miscalenious[0][3]-1/10)
+				tilingoffsetx*controller['offset'][0] + tilingx*(miscalenious[0][0]),
+				tilingoffsety*controller['offset'][1] + tilingy*(miscalenious[0][1]),
+				tilingx*(miscalenious[0][2]),
+				tilingy*(miscalenious[0][3])
 			)
 		)
 
 	for button in outs:
 		nuance = 0
 		if outs[button] >= minButtonPress:
-			nuance = 255
-		posx = math.trunc(tilingoffsetx*1 + tilingx*(1/20 + controller[button][0][0]))
-		posy = math.trunc(tilingoffsety*0 + tilingy*(1/20 + controller[button][0][1]))
-		sizex = math.trunc(tilingx*(9/10))
-		sizey = math.trunc(tilingy*(9/10))
-
-		postextx = posx + tilingx*controller[button][1][0]
-		postexty = posy + tilingy*controller[button][1][1]
-
-		#font = pygame.font.SysFont('didot.ttc', math.trunc(sizex))
-		#img = font.render(button, False, (255, 255, 255))
-		#screen.blit(img, (postextx, postexty, sizex, sizey))
+			nuance = 1
+		posx = math.trunc(tilingoffsetx*controller['offset'][0] + tilingx*controller[button][0][0])
+		posy = math.trunc(tilingoffsety*controller['offset'][1] + tilingy*controller[button][0][1])
+		sizex = math.trunc(tilingx*controller[button][0][2])
+		sizey = math.trunc(tilingx*controller[button][0][3])
 
 		pygame.draw.rect(
 			screen,
-			pygame.Color((nuance, nuance, nuance)),
+			pygame.Color(controller[button][1][nuance]),
 			pygame.Rect(posx, posy, sizex, sizey)
 		)
 		
