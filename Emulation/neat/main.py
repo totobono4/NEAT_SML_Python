@@ -24,7 +24,7 @@ block = 5
 coin = 6
 
 reduceSize = 5
-minButtonPress = 1
+minButtonPress = 0.85
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -57,7 +57,7 @@ debut.close()
 
 #def displayNetwork():
 
-def displayNetwork(inputs, hiddens, outs, tilesvector):
+def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	screen.fill((0,0,0))
 
 	display_width = display_heigh = reduceSize
@@ -156,6 +156,18 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	
 	pygame.display.flip()
 
+def buildGraph(inputs, outputs, genome):
+	connections = []
+	hidden = []
+	for connection in genome.connections:
+		connectionobj = genome.connections[connection]
+		connections.append((connectionobj.key[0], connectionobj.key[1], connectionobj.weight, connectionobj.enabled))
+		if connectionobj.key[0] not in inputs and connectionobj.key[0] not in outputs:
+			hidden.append(connectionobj.key[0])
+		if connectionobj.key[1] not in inputs and connectionobj.key[1] not in outputs:
+			hidden.append(connectionobj.key[1])
+	return (connections, hidden)
+
 def step(genomes, config):
 	genenb = 0
 	for genome_id, genome in genomes:
@@ -184,7 +196,11 @@ def step(genomes, config):
 				} #outputs
 				sendInputs(manipulations)
 				pyboy.tick()
-				displayNetwork(config.genome_config.input_keys, genomes, manipulations, info["tiles"])
+
+				graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
+
+
+				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
 				if genome.fitness <= maxFitness:

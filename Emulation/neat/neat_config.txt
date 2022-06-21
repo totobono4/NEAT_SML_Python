@@ -6,9 +6,9 @@ reset_on_extinction     = False
 
 [DefaultGenome]
 # node activation options
-activation_default      = identity
+activation_default      = sigmoid
 activation_mutate_rate  = 0.0
-activation_options      = identity
+activation_options      = sigmoid
 
 # node aggregation options
 aggregation_default     = sum
@@ -68,7 +68,7 @@ weight_mutate_rate      = 0.8
 weight_replace_rate     = 0.1
 
 [DefaultSpeciesSet]
-compatibility_threshold = 0.7
+compatibility_threshold = 1.7
 
 [DefaultStagnation]
 species_fitness_func = max
