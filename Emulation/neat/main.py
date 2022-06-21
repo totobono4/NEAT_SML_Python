@@ -179,14 +179,16 @@ def getMarioPos(tiles):
 	return None
 
 def normalise(tiles):
-	ntiles = [0 for _ in range(reduceSize*reduceSize)]
 	pos = getMarioPos(tiles)
 	if pos is None:
 		return None
+	offset = 1
+	if reduceSize%2 == 0:
+		offset = 0
 	xmin = pos[0]-reduceSize//2
-	xmax = pos[0]+reduceSize//2
+	xmax = pos[0]+reduceSize//2+offset
 	ymin = pos[1]-reduceSize//2
-	ymax = pos[1]+reduceSize//2
+	ymax = pos[1]+reduceSize//2+offset
 	if xmin < 0:
 		xmin = 0
 	if xmax >= len(tiles[0]):
@@ -195,8 +197,12 @@ def normalise(tiles):
 		ymin = 0
 	if ymax >= len(tiles):
 		ymax = len(tiles)-1
-	for y in range(ymin, ymax+1):
-		for x in range(xmin, xmax+1):
+	return transform(xmin, xmax, ymin, ymax, tiles)
+
+def transform(xmin, xmax, ymin, ymax, tiles):
+	ntiles = [0 for _ in range(reduceSize*reduceSize)]
+	for y in range(ymin, ymax):
+		for x in range(xmin, xmax):
 			i = (reduceSize)*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
 			if tile in range(0, 26): #mario
