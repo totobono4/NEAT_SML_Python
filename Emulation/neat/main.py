@@ -19,6 +19,9 @@ empty = 0
 mario = 1
 enemy = 2
 platform = 3
+powerup = 4
+block = 5
+coin = 6
 
 reduceSize = 5
 minButtonPress = 1
@@ -57,7 +60,7 @@ debut.close()
 def displayNetwork(inputs, hiddens, outs, tilesvector):
 	screen.fill((0,0,0))
 
-	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
+	colors_filter = {empty: (255,255,255), mario:(0,0,255), enemy:(255,0,0), platform:(0,0,0), powerup:(0, 255, 0), block:(246,224,1), coin:(196,179,0)}
 	controller = {
 		'overlay': (
 			((0, 0, 13, 7),(255,255,255)),
@@ -137,11 +140,12 @@ def step(genomes, config):
 	for genome_id, genome in genomes:
 		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
 		genenb += 1
+		nbJump = 0
 		info = readLevelInfos()
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
-		maxStuckFrames = 150
+		maxStuckFrames = 25
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:
@@ -167,9 +171,13 @@ def step(genomes, config):
 				else:
 					maxFitness = genome.fitness
 					stuckFrames = 0
+				if out[0] >= minButtonPress:
+					nbJump += 1
 			else:
 				break
-		
+		genome.fitness += sml.coins*10
+		genome.fitness += sml.score/10
+		genome.fitness -= 10*nbJump
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
@@ -212,10 +220,16 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 			tile = tiles[y][x]
 			if tile in range(0, 26): #mario
 				ntiles[i] = mario
-			elif tile in range(351, 400) or tile in range(129, 144) or tile == 239:
+			elif tile in range(351, 400) or tile in range(130, 144) or tile == 239 or tile == 232:
 				ntiles[i] = platform
 			elif tile in range(144, 211):
 				ntiles[i] = enemy
+			elif tile == 224 or tile == 131:
+				ntiles[i] = powerup
+			elif tile == 129:
+				ntiles[i] = block
+			elif ntiles[i] == 244:
+				ntiles[i] = coin
 			else:
 				ntiles[i] = empty
 	return ntiles
@@ -289,6 +303,10 @@ def run(config_path):
 	p.run(step, 10)
 
 if __name__ == '__main__':
+	#while not pyboy.tick():
+	#	pass
+	#pyboy.stop()
+	#print(sml)
 	dirname = os.path.dirname(__file__)
 	config_path = os.path.join(dirname, "neat_config.txt")
 	run(config_path)
