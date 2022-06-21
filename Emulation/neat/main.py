@@ -89,7 +89,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	}
 	
 	controller = {
-		'offset': (2,0),
+		'offset': (1,0),
 		'overlay': (
 			# controller outline
 			((0.1, 0.1, 12.8, 6.8),(200,200,200)),
@@ -190,7 +190,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			(150,150,150) if not active else (0,255,0) if weight > 0 else (255,0,0),
 			perceptrons[id1],
 			perceptrons[id2],
-			math.trunc(abs(weight)*3 if active else 1))
+			math.trunc(abs(weight)+1)*2 if active else 1)
 	
 	pygame.display.flip()
 
