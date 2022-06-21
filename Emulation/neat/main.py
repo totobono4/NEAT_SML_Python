@@ -159,9 +159,13 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			pygame.Color(controller[button][1][nuance]),
 			pygame.Rect(posx, posy, sizex, sizey)
 		)
+
+		center = (posx + sizex/2, posy + sizey/2)
+		perceptrons[outputNames[button]] = center
 		
-	#for connection in connections:
-	#	pygame.draw.line(screen, (255,0,0), perceptrons[connection[0]], perceptrons[connection[1]], 2)
+	for connection in connections:
+		if connection[0] in perceptrons and connection[1] in perceptrons:
+			pygame.draw.line(screen, (255,0,0), perceptrons[connection[0]], perceptrons[connection[1]], 2)
 	
 	pygame.display.flip()
 
