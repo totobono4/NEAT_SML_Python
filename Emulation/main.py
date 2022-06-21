@@ -35,7 +35,7 @@ def step(genomes, config):
 
 	geneCount = 0
 	for genome_id, genome in genomes:
-		print("Gene : "+str(geneCount)+"/"+str(config.pop_size))
+		print("Gene : "+str(geneCount)+"/"+str(config.pop_size), end="\r")
 		geneCount += 1
 		info = readLevelInfos()
 		genome.fitness = 0 
