@@ -71,7 +71,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	display_width = display_heigh = reduceSize
 
-	tiling = 2
+	tiling = 4
 
 	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
 	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
@@ -79,9 +79,17 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
 
-	colors_filter = {empty: (255,255,255), mario:(0,0,255), enemy:(255,0,0), platform:(0,0,0), block:(244,255,0), coin:(241,194,50)}
+	colors_filter = {
+		empty: (255,255,255),
+		mario:(0,0,255),
+		enemy:(255,0,0),
+		platform:(0,0,0),
+		block:(244,255,0),
+		coin:(241,194,50)
+	}
+	
 	controller = {
-		'offset': (0,1),
+		'offset': (2,0),
 		'overlay': (
 			# controller outline
 			((0.1, 0.1, 12.8, 6.8),(200,200,200)),
@@ -105,9 +113,12 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		'b': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0)))
 	}
 
+	perceptrons = {}
+
 	for y in range(display_heigh):
 		for x in range(display_width):
-			rawvalue = tilesvector[(y*reduceSize)+x]
+			index2d = y*reduceSize+x
+			rawvalue = tilesvector[index2d]
 			nuance = colors_filter[rawvalue]
 			posx = math.trunc(tilingoffsetx*0 + tilingx*(x+1/20))
 			posy = math.trunc(tilingoffsety*0 + tilingy*(y+1/20))
@@ -118,6 +129,9 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 				pygame.Color(nuance),
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
+
+			center = (posx + sizex/2, posy + sizey/2)
+			perceptrons[-(index2d+1)] = center
 	
 	for miscalenious in controller['overlay']:
 		pygame.draw.rect(
@@ -146,7 +160,9 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			pygame.Rect(posx, posy, sizex, sizey)
 		)
 		
-
+	#for connection in connections:
+	#	pygame.draw.line(screen, (255,0,0), perceptrons[connection[0]], perceptrons[connection[1]], 2)
+	
 	pygame.display.flip()
 
 def buildGraph(inputs, outputs, genome):
