@@ -56,6 +56,8 @@ debut.close()
 def displayNetwork(inputs, hiddens, outs, tilesvector):
 	screen.fill((0,0,0))
 
+	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
+
 	display_width = display_heigh = reduceSize
 
 	print(outs)
@@ -63,14 +65,14 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	for y in range(display_heigh):
 		for x in range(display_width):
 			rawvalue = tilesvector[(y*reduceSize)+x]
-			nuance = math.trunc(rawvalue/ 4 * 255)
+			nuance = colors_filter[rawvalue]
 			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
 			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4)
 			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
 			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
 			pygame.draw.rect(
 				screen,
-				pygame.Color((nuance, nuance, nuance)),
+				pygame.Color(nuance),
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
 
@@ -89,15 +91,15 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	for y in range(display_heigh):
 		for x in range(display_width):
 			rawvalue = tilesvector[(y*reduceSize)+x]
-			nuance = math.trunc(rawvalue/ 4 * 255)
-			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
-			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4 + PYGAME_SCREEN_WIDTH*2 / 4)
-			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
-			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
-			posxin = math.trunc(posx + PYGAME_SCREEN_WIDTH / (display_width)/4*2/10)
-			posyin = math.trunc(posy + PYGAME_SCREEN_WIDTH / (display_width)/4*2/10)
-			sizexin = math.trunc(sizex*8/10)
-			sizeyin = math.trunc(sizey*8/10)
+			nuance = colors_filter[rawvalue]
+			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4 + PYGAME_SCREEN_WIDTH / (display_width)/4*1/10)
+			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4 + PYGAME_SCREEN_WIDTH / (display_width)/4*1/10 + PYGAME_SCREEN_WIDTH*2 / 4)
+			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4*8/10)
+			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4*8/10)
+			posxin = math.trunc(posx + PYGAME_SCREEN_WIDTH / (display_width)/4*3/20)
+			posyin = math.trunc(posy + PYGAME_SCREEN_WIDTH / (display_width)/4*3/20)
+			sizexin = math.trunc(sizex*9/10)
+			sizeyin = math.trunc(sizey*9/10)
 			pygame.draw.rect(
 				screen,
 				pygame.Color((255, 255, 255)),
