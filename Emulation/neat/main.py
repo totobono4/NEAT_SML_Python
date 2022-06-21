@@ -171,7 +171,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 def buildGraph(inputs, outputs, genome):
 	connections = []
-	hidden = []
+	hidden = set()
 	for connection in genome.connections:
 		connectionobj = genome.connections[connection]
 		connections.append((connectionobj.key[0], connectionobj.key[1], connectionobj.weight, connectionobj.enabled))
@@ -186,7 +186,6 @@ def step(genomes, config):
 	for genome_id, genome in genomes:
 		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
 		genenb += 1
-		nbJump = 0
 		info = readLevelInfos()
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
@@ -195,6 +194,7 @@ def step(genomes, config):
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:
+			lastScore = sml.score
 			if stuckFrames >= maxStuckFrames:
 				break
 			if info["tiles"] is not None:
@@ -216,18 +216,16 @@ def step(genomes, config):
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
-				if genome.fitness <= maxFitness:
+				if genome.fitness == maxFitness and sml.score == lastScore:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
+					lastScore = sml.score
 					stuckFrames = 0
-				if out[0] >= minButtonPress:
-					nbJump += 1
 			else:
 				break
 		genome.fitness += sml.coins*10
 		genome.fitness += sml.score/10
-		genome.fitness -= 10*nbJump
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
@@ -282,6 +280,8 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 				ntiles[i] = coin
 			else:
 				ntiles[i] = empty
+			if tile == 352:
+				print(ntiles[i])
 	return ntiles
 
 def readLevelInfos(): 
