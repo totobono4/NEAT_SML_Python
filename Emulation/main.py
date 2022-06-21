@@ -1,10 +1,9 @@
 import sys
 import os
-import io
 from pyboy import PyBoy, WindowEvent
 import neat
 import visualize
-from pathlib import Path, PosixPath, PurePath, PureWindowsPath
+from pathlib import Path
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
