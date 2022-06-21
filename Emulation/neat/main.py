@@ -132,8 +132,8 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	perceptrons = {}
 
-	hiddenoffset = (0,1)
-	hiddentiling = (4,3)
+	hiddenoffset = (0,2)
+	hiddentiling = (4,1)
 	for hidden in range(len(hiddens)):
 		tilingwidth = display_width * hiddentiling[0]
 		x = hidden % tilingwidth

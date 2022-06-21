@@ -38,14 +38,14 @@ enabled_default         = True
 enabled_mutate_rate     = 0.3
 
 feed_forward            = True
-initial_connection      = partial_direct 0.03
+initial_connection      = unconnected
 
 # node add/remove rates
 node_add_prob           = 0
 node_delete_prob        = 0
 
 # network parameters
-num_hidden              = 800
+num_hidden              = 10
 num_inputs              = 49
 num_outputs             = 6
 
