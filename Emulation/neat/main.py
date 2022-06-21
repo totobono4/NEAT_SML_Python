@@ -9,39 +9,23 @@ from pathlib import Path
 from graphviz import Digraph
 import pygame
 import numpy
+import learnOptions as options
 
 PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
 
 root = __file__
 
-empty = 0
-mario = 1
-enemy = 2
-platform = 3
-powerup = 4
-block = 5
-coin = 6
-
-use_coins_in_fitness = False
-use_score_in_fitness = False
-
-activation = {
-	mario:(True, empty, lambda tile: tile in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 66, 67, 68, 69, 70, 71]),
-
-	enemy:(True, empty, lambda tile: tile in [144, 153, 154, 155, 160, 160, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 208, 209, 210, 211, 212 ,213, 214, 215, 218, 219, 220]),
-
-	platform:(True, empty, lambda tile: tile in [128, 130, 142, 143, 231, 232, 234, 235, 236, 301, 304, 311, 319, 320, 333, 334, 339, 340, 352, 353, 354, 355, 356, 357, 358, 365, 366, 368, 369, 370, 371, 372, 373, 374 ,375, 376, 377, 378, 379 ,380, 381 ,382 ,383]),
-
-	powerup:(False, empty, lambda tile: tile in [131, 132, 133, 134, 224, 229]),
-
-	block:(False, platform, lambda tile: tile == 129),
-
-	coin:(False, empty, lambda tile: tile in [244, 298])
-}
-
 reduceSize = 5
-minButtonPress = 0.85
+
+def setReduceSize(value):
+    global reduceSize
+    reduceSize = value
+    print(reduceSize)
+
+def getReduceSize():
+    global reduceSize
+    return reduceSize
 
 outputNames = {
 	"a":0,
@@ -86,7 +70,7 @@ debut.close()
 def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	screen.fill((0,0,0))
 
-	display_width = display_heigh = reduceSize
+	display_width = display_heigh = getReduceSize()
 
 	tiling = 4
 
@@ -97,12 +81,12 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	tilingy = tilingoffsety/display_heigh
 
 	colors_filter = {
-		empty: (255,255,255),
-		mario:(0,0,255),
-		enemy:(255,0,0),
-		platform:(121,26,126),
-		block:(244,255,0),
-		coin:(241,194,50)
+		options.empty: (255,255,255),
+		options.mario:(0,0,255),
+		options.enemy:(255,0,0),
+		options.platform:(121,26,126),
+		options.block:(244,255,0),
+		options.coin:(241,194,50)
 	}
 	
 	controller = {
@@ -155,7 +139,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	for y in range(display_heigh):
 		for x in range(display_width):
-			index2d = y*reduceSize+x
+			index2d = y*getReduceSize()+x
 			rawvalue = tilesvector[index2d]
 			nuance = colors_filter[rawvalue]
 			posx = math.trunc(tilingoffsetx*0 + tilingx*(x+1/20))
@@ -185,7 +169,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	for button in outs:
 		nuance = 0
-		if outs[button] >= minButtonPress:
+		if outs[button] >= options.minButtonPress:
 			nuance = 1
 		posx = math.trunc(tilingoffsetx*controller['offset'][0] + tilingx*controller[button][0][0])
 		posy = math.trunc(tilingoffsety*controller['offset'][1] + tilingy*controller[button][0][1])
@@ -233,17 +217,17 @@ def buildGraph(inputs, outputs, genome):
 	return (connections, hidden)
 
 def step(genomes, config):
-	genenb = 0
+	gen = 0
 	for genome_id, genome in genomes:
-		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
-		genenb += 1
+		print("Gen : "+str(gen)+" : "+str(len(genomes)), end="\r")
+		gen+=1
 		info = readLevelInfos()
 		resetInputs()
-		genome.fitness = 0 
+		fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
 		maxStuckFrames = 60*2
-		maxFitness = genome.fitness
+		maxFitness = fitness
 		
 		while not info["dead"]:
 			if stuckFrames >= maxStuckFrames:
@@ -266,18 +250,18 @@ def step(genomes, config):
 
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
-				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
-				if genome.fitness >= maxFitness:
+				fitness = 0 if sml.level_progress is None else sml.level_progress
+				if fitness >= maxFitness:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
 					stuckFrames = 0
 			else:
 				break
-		if use_coins_in_fitness:
-			genome.fitness += sml.coins*10
-		if use_score_in_fitness:
-			genome.fitness += sml.score/10
+		if options.use_coins_in_fitness:
+			fitness += sml.coins*10
+		if options.use_score_in_fitness:
+			fitness += sml.score/10
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
@@ -296,12 +280,12 @@ def normalise(tiles):
 	if pos is None:
 		return None
 	offset = 1
-	if reduceSize%2 == 0:
+	if getReduceSize()%2 == 0:
 		offset = 0
-	xmin = pos[0]-reduceSize//2+1
-	xmax = pos[0]+reduceSize//2+offset+1
-	ymin = pos[1]-reduceSize//2+1
-	ymax = pos[1]+reduceSize//2+offset+1
+	xmin = pos[0]-getReduceSize()//2+1
+	xmax = pos[0]+getReduceSize()//2+offset+1
+	ymin = pos[1]-getReduceSize()//2+1
+	ymax = pos[1]+getReduceSize()//2+offset+1
 	if xmin < 0:
 		xmax += abs(xmin)
 		xmin = 0
@@ -317,32 +301,32 @@ def normalise(tiles):
 	return transform(xmin, xmax, ymin, ymax, tiles)
 
 def transform(xmin, xmax, ymin, ymax, tiles):
-	ntiles = [0 for _ in range(reduceSize*reduceSize)]
+	ntiles = [0 for _ in range(getReduceSize()*getReduceSize())]
 	for y in range(ymin, ymax):
 		for x in range(xmin, xmax):
-			i = (reduceSize)*(y-ymin)+(x-xmin)
+			i = (getReduceSize())*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
 			looking = True
 			select = None
 			while(looking):
 				if select is None:
-					for activator in activation:
-						if activation[activator][2](tile):
-							if not activation[activator][0]:
-								select = activation[activator][1]
+					for activator in options.activation:
+						if options.activation[activator][2](tile):
+							if not options.activation[activator][0]:
+								select = options.activation[activator][1]
 							else:
 								select = activator
 								looking = False
 							break
 					if select is None:
-						select = empty
+						select = options.empty
 						looking = False
 				else:
-					if select not in activation:
+					if select not in options.activation:
 						looking = False
-					elif activation[select][2](tile):
-						if not activation[select][0]:
-							select = activation[select][1]
+					elif options.activation[select][2](tile):
+						if not options.activation[select][0]:
+							select = options.activation[select][1]
 						else:
 							looking = False
 					else:
@@ -370,25 +354,24 @@ def resetInputs():
 
 def sendInputs(manipulations):
 	resetInputs()
-	if manipulations["a"]>=minButtonPress:
+	if manipulations["a"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	if manipulations["b"]>=minButtonPress:
+	if manipulations["b"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	if manipulations["up"]>=minButtonPress:
+	if manipulations["up"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	if manipulations["down"]>=minButtonPress:
+	if manipulations["down"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	if manipulations["left"]>=minButtonPress:
+	if manipulations["left"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	if manipulations["right"]>=minButtonPress:
+	if manipulations["right"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 def run(config_path):
-	global reduceSize
 	config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 		neat.DefaultSpeciesSet, neat.DefaultStagnation,
 		config_path)
-	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
+	setReduceSize(int(math.sqrt(config.genome_config.num_inputs)))
 
 	pop = neat.Population(config)
 
@@ -396,22 +379,14 @@ def run(config_path):
 	pop.add_reporter(neat.StdOutReporter(True))
 	stats = neat.StatisticsReporter()
 	pop.add_reporter(stats)
-	pop.add_reporter(neat.Checkpointer(5, filename_prefix='./checkpoints/neat-checkpoint-'))
+	pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 
-	winner = pop.run(step)
+	winner = pop.run(step, 100)
 
     # Show output of the most fit genome against training data.
 	print('\nOutput:')
 
-	node_names = {0: 'A', 1: 'B', 2:'UP', 3:'DOWN', 4:'LEFT', 5:'RIGHT'}
-	tiles = readLevelInfos()["tiles"]
-	for i in range(len(tiles)):
-		node_names[-len(tiles)+i] = "tile_"+str(i)
-	visualize.draw_net(config, winner, True, node_names=node_names)
-	visualize.plot_stats(stats, ylog=False, view=True)
-	visualize.plot_species(stats, view=True)
-
-	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
+	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
 	pyboy.set_emulation_speed(0)
 
 	p.run(step, 10)
