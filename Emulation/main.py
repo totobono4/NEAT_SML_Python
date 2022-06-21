@@ -20,6 +20,8 @@ mario = 1
 enemy = 2
 platform = 3
 
+reduceSize = 5
+
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, str(SML_File) + "/..")
@@ -49,17 +51,17 @@ debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
 debut.close()
 
-def displayNetwork(inputs, hiddens, outs):
+#def displayNetwork():
+
+def displayNetwork(inputs, hiddens, outs, tilesvector):
 	screen.fill((0,0,0))
-	
-	area = numpy.asarray(sml.game_area())
-	display_heigh = len(area)
-	display_width = len(area[0])
+
+	display_width = display_heigh = reduceSize
 
 	for y in range(display_heigh):
 		for x in range(display_width):
-			rawvalue = area[y][x]
-			nuance = math.trunc(rawvalue/ 400 * 255)
+			rawvalue = tilesvector[(y*reduceSize)+x]
+			nuance = math.trunc(rawvalue/ 4 * 255)
 			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
 			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4)
 			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
@@ -72,8 +74,8 @@ def displayNetwork(inputs, hiddens, outs):
 
 	for y in range(display_heigh):
 		for x in range(display_width):
-			rawvalue = area[y][x]
-			nuance = math.trunc(rawvalue/ 400 * 255)
+			rawvalue = tilesvector[(y*reduceSize)+x]
+			nuance = math.trunc(rawvalue/ 4 * 255)
 			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
 			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4 + PYGAME_SCREEN_WIDTH*2 / 4)
 			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
@@ -96,8 +98,6 @@ def displayNetwork(inputs, hiddens, outs):
 	pygame.display.flip()
 
 def step(genomes, config):
-	print('display')
-
 	genenb = 0
 	for genome_id, genome in genomes:
 		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
@@ -124,7 +124,7 @@ def step(genomes, config):
 				} #outputs
 				sendInputs(manipulations)
 				pyboy.tick()
-				displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys)
+				displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
 				if genome.fitness <= maxFitness:
@@ -149,7 +149,6 @@ def getMarioPos(tiles):
 	return None
 
 def normalise(tiles):
-	reduceSize = 7
 	ntiles = [0 for _ in range(reduceSize*reduceSize)]
 	pos = getMarioPos(tiles)
 	if pos is None:
@@ -204,10 +203,11 @@ def sendInputs(manipulations):
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 def run(config_path):
+	global reduceSize
 	config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 		neat.DefaultSpeciesSet, neat.DefaultStagnation,
 		config_path)
-	config.genome_config.num_inputs = len(readLevelInfos()["tiles"])
+	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
 	pop = neat.Population(config)
 

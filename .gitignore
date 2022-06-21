@@ -1,1 +1,3 @@
 neat/checkpoints/**
+*__pychache__
+*.pyc
