@@ -9,9 +9,9 @@ reset_on_extinction   = False
 
 [DefaultGenome]
 # node activation options
-activation_default      = sigmoid
-activation_mutate_rate  = 0.0
-activation_options      = sigmoid
+activation_default      = random
+activation_mutate_rate  = 0.05
+activation_options      = sigmoid abs exp gauss hat relu lelu softplus square 
 
 # node aggregation options
 aggregation_default     = sum
@@ -34,7 +34,6 @@ compatibility_weight_coefficient   = 0.5
 # connection add/remove rates
 conn_add_prob           = 0.5
 conn_delete_prob        = 0.5
-single_structural_mutation = True
 
 # connection enable options
 enabled_default         = True
