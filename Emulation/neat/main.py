@@ -137,7 +137,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	hiddentiling = (4,2)
 	for hidden in range(len(hiddens)):
 		x = hidden % display_width
-		y = math.trunc(hidden / display_width)
+		y = math.trunc(hidden / display_width * hiddentiling[0])
 		nuance = (255,255,255)
 		posx = math.trunc(tilingoffsetx*hiddenoffset[0] + tilingx*(x+1/20))
 		posy = math.trunc(tilingoffsety*hiddenoffset[1] + tilingy*(y+1/20))
