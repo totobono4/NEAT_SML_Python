@@ -113,8 +113,6 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		'b': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0)))
 	}
 
-	print(hiddens)
-
 	hiddenoffset = (0,1)
 	for hidden in range(len(hiddens)):
 		pass
@@ -202,6 +200,7 @@ def step(genomes, config):
 		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
 		genenb += 1
 		info = readLevelInfos()
+		resetInputs()
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
@@ -261,17 +260,21 @@ def normalise(tiles):
 	offset = 1
 	if reduceSize%2 == 0:
 		offset = 0
-	xmin = pos[0]-reduceSize//2
-	xmax = pos[0]+reduceSize//2+offset
-	ymin = pos[1]-reduceSize//2
-	ymax = pos[1]+reduceSize//2+offset
+	xmin = pos[0]-reduceSize//2+1
+	xmax = pos[0]+reduceSize//2+offset+1
+	ymin = pos[1]-reduceSize//2+1
+	ymax = pos[1]+reduceSize//2+offset+1
 	if xmin < 0:
+		xmax += abs(xmin)
 		xmin = 0
 	if xmax >= len(tiles[0]):
+		xmin -= xmax-len(tiles[0])+1
 		xmax = len(tiles[0])-1
 	if ymin < 0:
+		ymax += abs(ymin)
 		ymin = 0
 	if ymax >= len(tiles):
+		ymin -= ymax-len(tiles)+1
 		ymax = len(tiles)-1
 	return transform(xmin, xmax, ymin, ymax, tiles)
 
@@ -306,31 +309,29 @@ def readLevelInfos():
     }
 	return levelInfo
 
+def resetInputs():
+	pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
+	pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
+	pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
+	pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+	pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
+	pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
+
+
 def sendInputs(manipulations):
+	resetInputs()
 	if manipulations["a"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
 	if manipulations["b"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
 	if manipulations["up"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
 	if manipulations["down"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
 	if manipulations["left"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
 	if manipulations["right"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-	else:		
-		pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
 
 def run(config_path):
 	global reduceSize
