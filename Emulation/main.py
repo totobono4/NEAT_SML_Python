@@ -57,59 +57,73 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	screen.fill((0,0,0))
 
 	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
+	controller = {
+		'overlay': (
+			pygame.Rect(1, 1, 13, 1),
+			pygame.Rect(1, 7, 13, 1),
+			pygame.Rect(1, 2, 1, 5),
+			pygame.Rect(13, 2, 1, 5)
+		),
+		'left': ((3,4),(-1,0)),
+		'up': ((4,3),(0,-1)),
+		'right': ((5,4),(1,0)),
+		'down': ((4,5),(0,1)),
+		'a': ((9,4),(0,1)),
+		'b': ((11,4),(0,1))
+	}
 
 	display_width = display_heigh = reduceSize
+
+	tiling = 3
+
+	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
+	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
+
+	tilingx = tilingoffsetx/display_width
+	tilingy = tilingoffsety/display_heigh
 
 	for y in range(display_heigh):
 		for x in range(display_width):
 			rawvalue = tilesvector[(y*reduceSize)+x]
 			nuance = colors_filter[rawvalue]
-			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
-			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4)
-			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
-			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
+			posx = math.trunc(tilingoffsetx*0 + tilingx*(x+1/20))
+			posy = math.trunc(tilingoffsety*0 + tilingy*(y+1/20))
+			sizex = math.trunc(tilingx*(9/10))
+			sizey = math.trunc(tilingy*(9/10))
 			pygame.draw.rect(
 				screen,
 				pygame.Color(nuance),
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
+	
+	for rect in controller['overlay']:
+		pygame.draw.rect(
+			screen,
+			(255,255,255),
+			(tilingoffsetx*1 + tilingx*rect[0], tilingoffsety*0 + tilingy*rect[1], tilingx*rect[2], tilingy*rect[3]))
 
-	buttonIndex = 0
 	for button in outs:
 		nuance = 0
 		if outs[button] > 0:
 			nuance = 255
-		posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * display_width + 400)
-		posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * buttonIndex + 4)
-		sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
-		sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
-		buttonIndex += 1
-		font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*3/4))
-		img = font.render(button, False, (255, 255, 255))
-		screen.blit(img, (posx, posy, sizex, sizey))
+		posx = math.trunc(tilingoffsetx*1 + tilingx*(1/20 + controller[button][0][0]))
+		posy = math.trunc(tilingoffsety*0 + tilingy*(1/20 + controller[button][0][1]))
+		sizex = math.trunc(tilingx*(9/10))
+		sizey = math.trunc(tilingy*(9/10))
+
+		postextx = posx + tilingx*controller[button][1][0]
+		postexty = posy + tilingy*controller[button][1][1]
+
+		#font = pygame.font.SysFont('didot.ttc', math.trunc(sizex))
+		#img = font.render(button, False, (255, 255, 255))
+		#screen.blit(img, (postextx, postexty, sizex, sizey))
+
 		pygame.draw.rect(
 			screen,
 			pygame.Color((nuance, nuance, nuance)),
-			pygame.Rect(posx+10, posy, sizex, sizey)
+			pygame.Rect(posx, posy, sizex, sizey)
 		)
-
-	for y in range(display_heigh):
-		for x in range(display_width):
-			rawvalue = tilesvector[(y*reduceSize)+x]
-			nuance = colors_filter[rawvalue]
-			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4 + PYGAME_SCREEN_WIDTH / (display_width)/4*1/10)
-			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4 + PYGAME_SCREEN_WIDTH / (display_width)/4*1/10 + PYGAME_SCREEN_WIDTH*2 / 4)
-			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4*8/10)
-			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4*8/10)
-			posxin = math.trunc(posx + PYGAME_SCREEN_WIDTH / (display_width)/4*3/20)
-			posyin = math.trunc(posy + PYGAME_SCREEN_WIDTH / (display_width)/4*3/20)
-			sizexin = math.trunc(sizex*9/10)
-			sizeyin = math.trunc(sizey*9/10)
-			pygame.draw.rect(
-				screen,
-				pygame.Color((0, 0, 0)),
-				pygame.Rect(posxin, posyin, sizexin, sizeyin)
-			)
+		
 
 	pygame.display.flip()
 
