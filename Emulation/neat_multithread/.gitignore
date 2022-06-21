@@ -1,0 +1,7 @@
+*.gv
+*.svg
+
+!.gitignore
+debut.save
+
+neat_config.txt

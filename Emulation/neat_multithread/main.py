@@ -3,12 +3,9 @@ import sys
 import os
 from pyboy import PyBoy, WindowEvent
 import neat
-import copy
-import visualize
 from pathlib import Path
 from graphviz import Digraph
 import pygame
-import numpy
 import learnOptions as options
 
 PYGAME_SCREEN_WIDTH = 750
@@ -16,7 +13,17 @@ PYGAME_SCREEN_HEIGH = 750
 
 root = __file__
 
-reduceSize = 5
+
+pyboy = PyBoy(Path(sys.argv[1]).as_posix(), game_wrapper=True, window_type="SDL2")
+pyboy.set_emulation_speed(0)
+sml = pyboy.game_wrapper()
+sml.start_game()
+debut = open("./debut.save", "wb")
+pyboy.save_state(debut)
+debut.close()
+
+pygame.init()
+screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
 outputNames = {
 	"a":0,
@@ -31,42 +38,10 @@ outputNames = {
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, str(SML_File) + "/..")
 
-# Check if the ROM is given through argv
-if len(sys.argv) > 1:
-    SML_File = Path( sys.argv[1] )
-else:
-    print("Usage: python SML_IA.py [ROM file]")
-    exit(1)
-
-if not SML_File.exists:
-	print('You have to put a Super Mario Land ROM that exists')
-	exit(1)
-
-# Check if the config is given through argv
-if len(sys.argv) > 2:
-    config_File = Path( sys.argv[2] )
-else:
-    print("Usage: python SML_IA.py [ROM file] [config file]")
-    exit(1)
-
-quiet = "--quiet" in sys.argv
-debugging = "--debug" in sys.argv
-pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
-pyboy.set_emulation_speed(0)
-sml = pyboy.game_wrapper()
-sml.start_game()
-
-pygame.init()
-screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
-
-debut = open("./debut.save", "wb")
-pyboy.save_state(debut)
-debut.close()
 
 #def displayNetwork():
 
-def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
-	global reduceSize
+def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, outs, tilesvector):
 	screen.fill((0,0,0))
 
 	display_width = display_heigh = reduceSize
@@ -216,9 +191,10 @@ def buildGraph(inputs, outputs, genome):
 	return (connections, hidden)
 
 def runGenome(genome, config):
-	global reduceSize
-	info = readLevelInfos()
-	resetInputs()
+	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
+
+	info = readLevelInfos(sml, reduceSize)
+	resetInputs(pyboy)
 	fitness = 0 
 	net = neat.nn.FeedForwardNetwork.create(genome, config)
 	stuckFrames = 0
@@ -238,14 +214,14 @@ def runGenome(genome, config):
 				"left":out[outputNames["left"]],
 				"right":out[outputNames["right"]]
 			} #outputs
-			sendInputs(manipulations)
+			sendInputs(pyboy, manipulations)
 			pyboy.tick()
 
 			graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
 
 
-			displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
-			info = readLevelInfos()
+			displayNetwork(screen, reduceSize, config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
+			info = readLevelInfos(sml, reduceSize)
 			fitness = 0 if sml.level_progress is None else sml.level_progress
 			if fitness <= maxFitness:
 				stuckFrames += 1
@@ -263,13 +239,6 @@ def runGenome(genome, config):
 	pyboy.tick()
 	debut.close()
 	return fitness
-
-def step(genomes, config):
-	gen = 0
-	for genome_id, genome in genomes:		
-		print("Gen : "+str(gen)+" : "+str(len(genomes)), end="\r")
-		gen+=1
-		genome.fitness = runGenome(genome, config)
 		
 
 def getMarioPos(tiles):
@@ -280,8 +249,7 @@ def getMarioPos(tiles):
 				return (x, y)
 	return None
 
-def normalise(tiles):
-	global reduceSize
+def normalise(tiles, reduceSize):
 	pos = getMarioPos(tiles)
 	if pos is None:
 		return None
@@ -304,10 +272,9 @@ def normalise(tiles):
 	if ymax >= len(tiles):
 		ymin -= ymax-len(tiles)+1
 		ymax = len(tiles)-1
-	return transform(xmin, xmax, ymin, ymax, tiles)
+	return transform(xmin, xmax, ymin, ymax, tiles, reduceSize)
 
-def transform(xmin, xmax, ymin, ymax, tiles):
-	global reduceSize
+def transform(xmin, xmax, ymin, ymax, tiles, reduceSize):
 	ntiles = [0 for _ in range(reduceSize*reduceSize)]
 	for y in range(ymin, ymax):
 		for x in range(xmin, xmax):
@@ -341,16 +308,16 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 			ntiles[i] = select
 	return ntiles
 
-def readLevelInfos(): 
+def readLevelInfos(sml, reduceSize): 
 	area = sml.game_area()
-	tiles = normalise(area)
+	tiles = normalise(area, reduceSize)
 	levelInfo = {
         "dead":sml.lives_left <= 1, 
         "tiles":tiles
     }
 	return levelInfo
 
-def resetInputs():
+def resetInputs(pyboy):
 	pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
 	pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
 	pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
@@ -359,8 +326,8 @@ def resetInputs():
 	pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
 
 
-def sendInputs(manipulations):
-	resetInputs()
+def sendInputs(pyboy, manipulations):
+	resetInputs(pyboy)
 	if manipulations["a"]>=options.minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
 	if manipulations["b"]>=options.minButtonPress:
@@ -375,11 +342,9 @@ def sendInputs(manipulations):
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 def run(config_path):
-	global reduceSize
 	config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 		neat.DefaultSpeciesSet, neat.DefaultStagnation,
 		config_path)
-	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
 	pop = neat.Population(config)
 
@@ -389,15 +354,15 @@ def run(config_path):
 	pop.add_reporter(stats)
 	pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 
-	winner = pop.run(step, 100)
+	pe = neat.ParallelEvaluator(5, runGenome)
+	winner = pop.run(pe.evaluate, 100)
 
     # Show output of the most fit genome against training data.
 	print('\nOutput:')
 
 	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
-	pyboy.set_emulation_speed(0)
 
-	p.run(step, 10)
+	p.run(pe.evaluate, 10)
 
 if __name__ == '__main__':
 	#while not pyboy.tick():
@@ -405,6 +370,4 @@ if __name__ == '__main__':
 	#pyboy.stop()
 	#print(sml)
 	dirname = os.path.dirname(__file__)
-	run(config_File)
-
-	pygame.quit()
+	run(Path( sys.argv[2] ))
