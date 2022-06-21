@@ -113,6 +113,12 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		'b': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0)))
 	}
 
+	print(hiddens)
+
+	hiddenoffset = (0,1)
+	for hidden in range(len(hiddens)):
+		pass
+
 	perceptrons = {}
 
 	for y in range(display_heigh):
@@ -162,10 +168,19 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 		center = (posx + sizex/2, posy + sizey/2)
 		perceptrons[outputNames[button]] = center
-		
+
 	for connection in connections:
 		if connection[0] in perceptrons and connection[1] in perceptrons:
-			pygame.draw.line(screen, (255,0,0), perceptrons[connection[0]], perceptrons[connection[1]], 2)
+			id1 = connection[0]
+			id2 = connection[1]
+			weight = connection[2]
+			active = connection[3]
+			pygame.draw.line(
+				screen,
+				(150,150,150) if not active else (0,255,0) if weight > 0 else (255,0,0),
+				perceptrons[id1],
+				perceptrons[id2],
+				math.trunc(abs(weight)*2 if active else 1))
 	
 	pygame.display.flip()
 
