@@ -223,11 +223,11 @@ def step(genomes, config):
 		gen+=1
 		info = readLevelInfos()
 		resetInputs()
-		fitness = 0 
+		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
 		maxStuckFrames = 60*2
-		maxFitness = fitness
+		maxFitness = genome.fitness
 		
 		while not info["dead"]:
 			if stuckFrames >= maxStuckFrames:
@@ -250,8 +250,8 @@ def step(genomes, config):
 
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
-				fitness = 0 if sml.level_progress is None else sml.level_progress
-				if fitness >= maxFitness:
+				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
+				if genome.fitness >= maxFitness:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
@@ -259,9 +259,9 @@ def step(genomes, config):
 			else:
 				break
 		if options.use_coins_in_fitness:
-			fitness += sml.coins*10
+			genome.fitness += sml.coins*10
 		if options.use_score_in_fitness:
-			fitness += sml.score/10
+			genome.fitness += sml.score/10
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
