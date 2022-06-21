@@ -26,6 +26,15 @@ coin = 6
 reduceSize = 5
 minButtonPress = 0.85
 
+outputNames = {
+	"a":0,
+	"b":1,
+	"up":2,
+	"down":3,
+	"left":4,
+	"right":5
+}
+
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, str(SML_File) + "/..")
@@ -171,12 +180,12 @@ def step(genomes, config):
 			if info["tiles"] is not None:
 				out = net.activate(info["tiles"])
 				manipulations = {
-					"a":out[0],
-					"b":out[1],
-					"up":out[2],
-					"down":out[3],
-					"left":out[4],
-					"right":out[5]
+					"a":out[outputNames["a"]],
+					"b":out[outputNames["b"]],
+					"up":out[outputNames["up"]],
+					"down":out[outputNames["down"]],
+					"left":out[outputNames["left"]],
+					"right":out[outputNames["right"]]
 				} #outputs
 				sendInputs(manipulations)
 				pyboy.tick()
