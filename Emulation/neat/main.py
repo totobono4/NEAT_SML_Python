@@ -23,6 +23,24 @@ powerup = 4
 block = 5
 coin = 6
 
+use_coins_in_fitness = False
+use_score_in_fitness = False
+
+activation = {
+	mario:(True, empty, lambda tile: tile in range(0, 7) or tile in range(9, 13) or tile in range(17 ,23) \
+		or tile in range(26, 30) or tile in range(31, 44) or tile in range(48, 60) or tile in range(30, 36)),
+
+	enemy:(True, empty, lambda tile: tile in range(144, 211)),
+
+	platform:(True, empty, lambda tile: tile in range(351, 400) or tile in range(130, 144) or tile == 239 or tile == 232),
+
+	powerup:(False, empty, lambda tile: tile == 224 or tile == 131),
+
+	block:(False, platform, lambda tile: tile == 129),
+
+	coin:(False, empty, lambda tile: tile == 244)
+}
+
 reduceSize = 5
 minButtonPress = 0.85
 
@@ -224,7 +242,7 @@ def step(genomes, config):
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
-		maxStuckFrames = 25
+		maxStuckFrames = 60*2
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:
@@ -232,7 +250,7 @@ def step(genomes, config):
 			if stuckFrames >= maxStuckFrames:
 				break
 			if info["tiles"] is not None:
-				out = net.activate(info["tiles"])
+				out = net.activate([ x/6 for x in info["tiles"]])
 				manipulations = {
 					"a":out[outputNames["a"]],
 					"b":out[outputNames["b"]],
@@ -250,7 +268,7 @@ def step(genomes, config):
 				displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
-				if genome.fitness == maxFitness and sml.score == lastScore:
+				if genome.fitness >= maxFitness and sml.score == lastScore:
 					stuckFrames += 1
 				else:
 					maxFitness = genome.fitness
@@ -258,8 +276,10 @@ def step(genomes, config):
 					stuckFrames = 0
 			else:
 				break
-		genome.fitness += sml.coins*10
-		genome.fitness += sml.score/10
+		if use_coins_in_fitness:
+			genome.fitness += sml.coins*10
+		if use_score_in_fitness:
+			genome.fitness += sml.score/10
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
@@ -304,20 +324,32 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 		for x in range(xmin, xmax):
 			i = (reduceSize)*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
-			if tile in range(0, 28): #mario
-				ntiles[i] = mario
-			elif tile in range(351, 400) or tile in range(130, 144) or tile == 239 or tile == 232:
-				ntiles[i] = platform
-			elif tile in range(144, 211):
-				ntiles[i] = enemy
-			elif tile == 224 or tile == 131:
-				ntiles[i] = powerup
-			elif tile == 129:
-				ntiles[i] = block
-			elif ntiles[i] == 244:
-				ntiles[i] = coin
-			else:
-				ntiles[i] = empty
+			looking = True
+			select = None
+			while(looking):
+				if select is None:
+					for activator in activation:
+						if activation[activator][2](tile):
+							if not activation[activator][0]:
+								select = activation[activator][1]
+							else:
+								select = activator
+								looking = False
+							break
+					if select is None:
+						select = empty
+						looking = False
+				else:
+					if select not in activation:
+						looking = False
+					elif activation[select][2](tile):
+						if not activation[select][0]:
+							select = activation[select][1]
+						else:
+							looking = False
+					else:
+						looking = False
+			ntiles[i] = select
 	return ntiles
 
 def readLevelInfos(): 
