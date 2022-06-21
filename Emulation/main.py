@@ -107,7 +107,7 @@ def run(config_path):
 	pop.add_reporter(neat.StdOutReporter(True))
 	stats = neat.StatisticsReporter()
 	pop.add_reporter(stats)
-	pop.add_reporter(neat.Checkpointer(5, filename_prefix="./checkpoints/neat-checkpoint-"))
+	pop.add_reporter(neat.Checkpointer(5, filename_prefix=str(Path(os.path.dirname(__file__) ,'/checkpoints/neat-checkpoint-4'))))
 
 	winner = pop.run(step)
 
@@ -122,7 +122,7 @@ def run(config_path):
 	visualize.plot_stats(stats, ylog=False, view=True)
 	visualize.plot_species(stats, view=True)
 
-	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
+	p = neat.Checkpointer.restore_checkpoint(str(Path(os.path.dirname(__file__) ,'/checkpoints/neat-checkpoint-4')))
 	pyboy.set_emulation_speed(0)
 	p.run(step, 10)
 
