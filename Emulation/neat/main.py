@@ -176,9 +176,9 @@ def buildGraph(inputs, outputs, genome):
 		connectionobj = genome.connections[connection]
 		connections.append((connectionobj.key[0], connectionobj.key[1], connectionobj.weight, connectionobj.enabled))
 		if connectionobj.key[0] not in inputs and connectionobj.key[0] not in outputs:
-			hidden.append(connectionobj.key[0])
+			hidden.add(connectionobj.key[0])
 		if connectionobj.key[1] not in inputs and connectionobj.key[1] not in outputs:
-			hidden.append(connectionobj.key[1])
+			hidden.add(connectionobj.key[1])
 	return (connections, hidden)
 
 def step(genomes, config):
