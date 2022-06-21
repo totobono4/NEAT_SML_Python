@@ -58,6 +58,8 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 
 	display_width = display_heigh = reduceSize
 
+	print(outs)
+
 	for y in range(display_heigh):
 		for x in range(display_width):
 			rawvalue = tilesvector[(y*reduceSize)+x]
@@ -71,6 +73,18 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 				pygame.Color((nuance, nuance, nuance)),
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
+
+	for i in range(outs):
+		nuance = 0
+		posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x + 400)
+		posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y + 400)
+		sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
+		sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
+		pygame.draw.rect(
+			screen,
+			pygame.Color((nuance, nuance, nuance)),
+			pygame.Rect(posx, posy, sizex, sizey)
+		)
 
 	for y in range(display_heigh):
 		for x in range(display_width):
