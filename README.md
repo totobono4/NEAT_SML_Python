@@ -1,2 +1,2 @@
-# NEAT_SMW_Python
-NEAT Algorithm in Python for Super Mario World
+# NEAT_SML_Python
+NEAT Algorithm in Python for Super Mario Land
