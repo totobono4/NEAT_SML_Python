@@ -296,7 +296,7 @@ def transform(xmin, xmax, ymin, ymax, tiles):
 		for x in range(xmin, xmax):
 			i = (reduceSize)*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
-			if tile in range(0, 26): #mario
+			if tile in range(0, 28): #mario
 				ntiles[i] = mario
 			elif tile in range(351, 400) or tile in range(130, 144) or tile == 239 or tile == 232:
 				ntiles[i] = platform
