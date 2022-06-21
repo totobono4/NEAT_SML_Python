@@ -51,6 +51,13 @@ if not SML_File.exists:
 	print('You have to put a Super Mario Land ROM that exists')
 	exit(1)
 
+# Check if the config is given through argv
+if len(sys.argv) > 2:
+    config_File = Path( sys.argv[2] )
+else:
+    print("Usage: python SML_IA.py [ROM file] [config file]")
+    exit(1)
+
 quiet = "--quiet" in sys.argv
 debugging = "--debug" in sys.argv
 pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
@@ -397,7 +404,6 @@ if __name__ == '__main__':
 	#pyboy.stop()
 	#print(sml)
 	dirname = os.path.dirname(__file__)
-	config_path = os.path.join(dirname, "neat_config.txt")
-	run(config_path)
+	run(config_File)
 
 	pygame.quit()
