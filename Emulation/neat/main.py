@@ -11,8 +11,8 @@ import pygame
 import numpy
 import learnOptions as options
 
-PYGAME_SCREEN_WIDTH = 750
-PYGAME_SCREEN_HEIGH = 750
+PYGAME_SCREEN_WIDTH = 400
+PYGAME_SCREEN_HEIGH = 400
 
 root = __file__
 
@@ -79,13 +79,15 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	display_width = display_heigh = getReduceSize()
 
-	tiling = 4
+	tiling = 2
 
 	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
 	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
 
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
+
+	controller_tiling = tilingoffsety/7
 
 	colors_filter = {
 		options.empty: (255,255,255),
@@ -97,7 +99,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	}
 	
 	controller = {
-		'offset': (1,0),
+		'offset': (0,1),
 		'overlay': (
 			# controller outline
 			((0.1, 0.1, 12.8, 6.8),(200,200,200)),
@@ -123,13 +125,13 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 
 	perceptrons = {}
 
-	hiddenoffset = (0,2)
-	hiddentiling = (4,1)
+	hiddenoffset = (1,0)
+	hiddentiling = (1,1)
 	for hidden in range(len(hiddens)):
 		tilingwidth = display_width * hiddentiling[0]
 		x = hidden % tilingwidth
 		y = math.trunc(hidden / tilingwidth)
-		nuance = (255,255,255)
+		nuance = (75,220,206)
 		posx = math.trunc(tilingoffsetx*hiddenoffset[0] + tilingx*(x+1/20))
 		posy = math.trunc(tilingoffsety*hiddenoffset[1] + tilingy*(y+1/20))
 		sizex = math.trunc(tilingx*(9/10))
@@ -167,10 +169,10 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			screen,
 			miscalenious[1],
 			(
-				tilingoffsetx*controller['offset'][0] + tilingx*(miscalenious[0][0]),
-				tilingoffsety*controller['offset'][1] + tilingy*(miscalenious[0][1]),
-				tilingx*(miscalenious[0][2]),
-				tilingy*(miscalenious[0][3])
+				tilingoffsetx*controller['offset'][0] + controller_tiling*(miscalenious[0][0]),
+				tilingoffsety*controller['offset'][1] + controller_tiling*(miscalenious[0][1]),
+				controller_tiling*(miscalenious[0][2]),
+				controller_tiling*(miscalenious[0][3])
 			)
 		)
 
@@ -178,10 +180,10 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		nuance = 0
 		if outs[button] >= options.minButtonPress:
 			nuance = 1
-		posx = math.trunc(tilingoffsetx*controller['offset'][0] + tilingx*controller[button][0][0])
-		posy = math.trunc(tilingoffsety*controller['offset'][1] + tilingy*controller[button][0][1])
-		sizex = math.trunc(tilingx*controller[button][0][2])
-		sizey = math.trunc(tilingx*controller[button][0][3])
+		posx = math.trunc(tilingoffsetx*controller['offset'][0] + controller_tiling*controller[button][0][0])
+		posy = math.trunc(tilingoffsety*controller['offset'][1] + controller_tiling*controller[button][0][1])
+		sizex = math.trunc(controller_tiling*controller[button][0][2])
+		sizey = math.trunc(controller_tiling*controller[button][0][3])
 
 		pygame.draw.rect(
 			screen,
@@ -192,7 +194,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		if button == 'a' or button == 'b':
 			font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*1))
 			img = font.render(str.upper(str(button)), False, (255, 0, 0))
-			screen.blit(img, (posx + tilingx/2, posy + tilingy, sizex, sizey))
+			screen.blit(img, (posx + controller_tiling/2, posy + controller_tiling, sizex, sizey))
 
 		center = (posx + sizex/2, posy + sizey/2)
 		perceptrons[outputNames[button]] = center
