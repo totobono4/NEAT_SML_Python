@@ -83,7 +83,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		empty: (255,255,255),
 		mario:(0,0,255),
 		enemy:(255,0,0),
-		platform:(0,0,0),
+		platform:(121,26,126),
 		block:(244,255,0),
 		coin:(241,194,50)
 	}
@@ -100,17 +100,17 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			((3, 2, 1, 3),(100,100,100)),
 			((2, 3, 3, 1),(100,100,100)),
 			# buttons outline
-			((7.8,3.8,1,1),(255,255,255)),
+			((7.8,3.8,1,1),(150,150,150)),
 			((7.9,3.9,1,1),(100,100,100)),
-			((9.8,3.8,1,1),(255,255,255)),
+			((9.8,3.8,1,1),(150,150,150)),
 			((9.9,3.9,1,1),(100,100,100))
 		),
 		'left': ((2.2,3.2,.7,.7),((200,200,200),(50,50,50))),
 		'up': ((3.2,2.2,.7,.7),((200,200,200),(50,50,50))),
 		'right': ((4.2,3.2,.7,.7),((200,200,200),(50,50,50))),
 		'down': ((3.2,4.2,.7,.7),((200,200,200),(50,50,50))),
-		'a': ((8.1,4.1,.7,.7),((255,0,0),(150,0,0))),
-		'b': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0)))
+		'a': ((10.1,4.1,.7,.7),((255,0,0),(150,0,0))),
+		'b': ((8.1,4.1,.7,.7),((255,0,0),(150,0,0)))
 	}
 
 	perceptrons = {}
@@ -176,6 +176,11 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			pygame.Color(controller[button][1][nuance]),
 			pygame.Rect(posx, posy, sizex, sizey)
 		)
+
+		if button == 'a' or button == 'b':
+			font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*1))
+			img = font.render(str.upper(str(button)), False, (255, 0, 0))
+			screen.blit(img, (posx + tilingx/2, posy + tilingy, sizex, sizey))
 
 		center = (posx + sizex/2, posy + sizey/2)
 		perceptrons[outputNames[button]] = center
