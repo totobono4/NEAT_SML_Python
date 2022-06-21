@@ -216,7 +216,7 @@ def step(genomes, config):
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
-		maxStuckFrames = 25
+		maxStuckFrames = 60*2
 		maxFitness = genome.fitness
 		
 		while not info["dead"]:

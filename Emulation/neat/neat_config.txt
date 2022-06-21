@@ -7,12 +7,12 @@ reset_on_extinction     = False
 [DefaultGenome]
 # node activation options
 activation_default      = sigmoid
-activation_mutate_rate  = 0.02
+activation_mutate_rate  = 0
 activation_options      = sigmoid
 
 # node aggregation options
 aggregation_default     = sum
-aggregation_mutate_rate = 0.01
+aggregation_mutate_rate = 0
 aggregation_options     = sum
 
 # node bias options
@@ -38,14 +38,14 @@ enabled_default         = False
 enabled_mutate_rate     = 0.12
 
 feed_forward            = True
-initial_connection      = unconnected
+initial_connection      = partial_direct 0.1
 
 # node add/remove rates
 node_add_prob           = 0.3
 node_delete_prob        = 0.3
 
 # network parameters
-num_hidden              = 1
+num_hidden              = 20
 num_inputs              = 36
 num_outputs             = 6
 
@@ -72,10 +72,10 @@ compatibility_threshold = 1.6
 
 [DefaultStagnation]
 species_fitness_func = max
-max_stagnation       = 3
+max_stagnation       = 4
 species_elitism      = 2
 
 [DefaultReproduction]
 elitism            = 2
-survival_threshold = 0.3
+survival_threshold = 0.25
 min_species_size   = 2
