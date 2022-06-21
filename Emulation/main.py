@@ -49,8 +49,6 @@ debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
 debut.close()
 
-#def displayNetwork():
-
 def displayNetwork(inputs, hiddens, outs):
 	screen.fill((0,0,0))
 	
@@ -99,7 +97,6 @@ def displayNetwork(inputs, hiddens, outs):
 
 def step(genomes, config):
 	print('display')
-	displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys)
 
 	genenb = 0
 	for genome_id, genome in genomes:
@@ -127,6 +124,7 @@ def step(genomes, config):
 				} #outputs
 				sendInputs(manipulations)
 				pyboy.tick()
+				displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys)
 				info = readLevelInfos()
 				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
 				if genome.fitness <= maxFitness:
