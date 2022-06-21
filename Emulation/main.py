@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 from pyboy import PyBoy, WindowEvent
@@ -5,6 +6,11 @@ import neat
 import visualize
 from pathlib import Path
 from graphviz import Digraph
+import pygame
+import numpy
+
+PYGAME_SCREEN_WIDTH = 750
+PYGAME_SCREEN_HEIGH = 750
 
 root = __file__
 
@@ -24,10 +30,14 @@ if not SML_File.exists:
 	exit(1)
 
 quiet = "--quiet" in sys.argv
-pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2")
+debugging = "--debug" in sys.argv
+pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
 pyboy.set_emulation_speed(0)
 sml = pyboy.game_wrapper()
 sml.start_game()
+
+pygame.init()
+screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
 debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
@@ -35,8 +45,55 @@ debut.close()
 
 #def displayNetwork():
 
+def displayNetwork(inputs, hiddens, outs):
+	screen.fill((0,0,0))
+	
+	area = numpy.asarray(sml.game_area())
+	display_heigh = len(area)
+	display_width = len(area[0])
+
+	for y in range(display_heigh):
+		for x in range(display_width):
+			rawvalue = area[y][x]
+			nuance = math.trunc(rawvalue/ 400 * 255)
+			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
+			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4)
+			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
+			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
+			pygame.draw.rect(
+				screen,
+				pygame.Color((nuance, nuance, nuance)),
+				pygame.Rect(posx, posy, sizex, sizey)
+			)
+
+	for y in range(display_heigh):
+		for x in range(display_width):
+			rawvalue = area[y][x]
+			nuance = math.trunc(rawvalue/ 400 * 255)
+			posx = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) * x / 4)
+			posy = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) * y / 4 + PYGAME_SCREEN_WIDTH*2 / 4)
+			sizex = math.trunc(PYGAME_SCREEN_WIDTH / (display_width) / 4)
+			sizey = math.trunc(PYGAME_SCREEN_HEIGH / (display_heigh) / 4)
+			posxin = math.trunc(posx + PYGAME_SCREEN_WIDTH / (display_width)/4*2/10)
+			posyin = math.trunc(posy + PYGAME_SCREEN_WIDTH / (display_width)/4*2/10)
+			sizexin = math.trunc(sizex*8/10)
+			sizeyin = math.trunc(sizey*8/10)
+			pygame.draw.rect(
+				screen,
+				pygame.Color((255, 255, 255)),
+				pygame.Rect(posx, posy, sizex, sizey)
+			)
+			pygame.draw.rect(
+				screen,
+				pygame.Color((0, 0, 0)),
+				pygame.Rect(posxin, posyin, sizexin, sizeyin)
+			)
+
+	pygame.display.flip()
 
 def step(genomes, config):
+	print('display')
+	displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys)
 
 	geneCount = 0
 	for genome_id, genome in genomes:
@@ -133,7 +190,8 @@ def run(config_path):
 	p.run(step, 10)
 
 if __name__ == '__main__':
-	print(sml)
 	dirname = os.path.dirname(__file__)
 	config_path = os.path.join(dirname, "neat_config.txt")
 	run(config_path)
+
+	pygame.quit()
