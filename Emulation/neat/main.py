@@ -21,6 +21,7 @@ enemy = 2
 platform = 3
 
 reduceSize = 5
+minButtonPress = 1
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -104,7 +105,7 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 
 	for button in outs:
 		nuance = 0
-		if outs[button] > 0:
+		if outs[button] >= minButtonPress:
 			nuance = 255
 		posx = math.trunc(tilingoffsetx*1 + tilingx*(1/20 + controller[button][0][0]))
 		posy = math.trunc(tilingoffsety*0 + tilingy*(1/20 + controller[button][0][1]))
@@ -225,18 +226,30 @@ def readLevelInfos():
 	return levelInfo
 
 def sendInputs(manipulations):
-	if manipulations["a"]>0:
+	if manipulations["a"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	if manipulations["b"]>0:
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
+	if manipulations["b"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	if manipulations["up"]>0:
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
+	if manipulations["up"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	if manipulations["down"]>0:
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
+	if manipulations["down"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	if manipulations["left"]>0:
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
+	if manipulations["left"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	if manipulations["right"]>0:
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
+	if manipulations["right"]>=minButtonPress:
 		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
+	else:		
+		pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
 
 def run(config_path):
 	global reduceSize
