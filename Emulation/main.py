@@ -3,6 +3,7 @@ import sys
 import os
 from pyboy import PyBoy, WindowEvent
 import neat
+import copy
 import visualize
 from pathlib import Path
 from graphviz import Digraph
@@ -13,6 +14,11 @@ PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
 
 root = __file__
+
+empty = 0
+mario = 1
+enemy = 2
+platform = 3
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -95,49 +101,90 @@ def step(genomes, config):
 	print('display')
 	displayNetwork(config.genome_config.input_keys, genomes, config.genome_config.output_keys)
 
-	geneCount = 0
+	genenb = 0
 	for genome_id, genome in genomes:
-		print("Gene : "+str(geneCount)+"/"+str(config.pop_size), end="\r")
-		geneCount += 1
+		print("Gene : "+str(genenb)+"/"+str(config.pop_size), end="\r")
+		genenb += 1
 		info = readLevelInfos()
 		genome.fitness = 0 
 		net = neat.nn.FeedForwardNetwork.create(genome, config)
 		stuckFrames = 0
 		maxStuckFrames = 300
 		maxFitness = genome.fitness
-        
+		
 		while not info["dead"]:
 			if stuckFrames >= maxStuckFrames:
 				break
-			out = net.activate(info["tiles"])
-			manipulations = {
-                "a":out[0],
-                "b":out[1],
-                "up":out[2],
-                "down":out[3],
-                "left":out[4],
-                "right":out[5]
-            } #outputs
-			sendInputs(manipulations)
-			pyboy.tick()
-			info = readLevelInfos()
-			genome.fitness = sml.level_progress
-			if genome.fitness <= maxFitness:
-				stuckFrames += 1
+			if info["tiles"] is not None:
+				out = net.activate(info["tiles"])
+				manipulations = {
+					"a":out[0],
+					"b":out[1],
+					"up":out[2],
+					"down":out[3],
+					"left":out[4],
+					"right":out[5]
+				} #outputs
+				sendInputs(manipulations)
+				pyboy.tick()
+				info = readLevelInfos()
+				genome.fitness = 0 if sml.level_progress is None else sml.level_progress
+				if genome.fitness <= maxFitness:
+					stuckFrames += 1
+				else:
+					maxFitness = genome.fitness
+					stuckFrames = 0
 			else:
-				maxFitness = genome.fitness
-				stuckFrames = 0
+				break
 		
 		debut = open("./debut.save", "rb")
 		pyboy.load_state(debut)
 		pyboy.tick()
 		debut.close()
 
+def getMarioPos(tiles):
+	for y in range(len(tiles)):
+		for x in range(len(tiles[y])):
+			tile = tiles[y][x]
+			if tile in range(0, 26): #mario
+				return (x, y)
+	return None
+
+def normalise(tiles):
+	reduceSize = 7
+	ntiles = [0 for _ in range(reduceSize*reduceSize)]
+	pos = getMarioPos(tiles)
+	if pos is None:
+		return None
+	xmin = pos[0]-reduceSize//2
+	xmax = pos[0]+reduceSize//2
+	ymin = pos[1]-reduceSize//2
+	ymax = pos[1]+reduceSize//2
+	if xmin < 0:
+		xmin = 0
+	if xmax >= len(tiles[0]):
+		xmax = len(tiles[0])-1
+	if ymin < 0:
+		ymin = 0
+	if ymax >= len(tiles):
+		ymax = len(tiles)-1
+	for y in range(ymin, ymax+1):
+		for x in range(xmin, xmax+1):
+			i = (reduceSize)*(y-ymin)+(x-xmin)
+			tile = tiles[y][x]
+			if tile in range(0, 26): #mario
+				ntiles[i] = mario
+			elif tile in range(351, 400) or tile in range(129, 144) or tile == 239:
+				ntiles[i] = platform
+			elif tile in range(144, 211):
+				ntiles[i] = enemy
+			else:
+				ntiles[i] = empty
+	return ntiles
+
 def readLevelInfos(): 
-	tiles = []
-	for row in sml.game_area():
-		for cell in row:
-			tiles.append(cell)
+	area = sml.game_area()
+	tiles = normalise(area)
 	levelInfo = {
         "dead":sml.lives_left <= 1, 
         "tiles":tiles
@@ -187,6 +234,7 @@ def run(config_path):
 
 	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-4')
 	pyboy.set_emulation_speed(0)
+
 	p.run(step, 10)
 
 if __name__ == '__main__':
