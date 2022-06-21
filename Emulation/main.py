@@ -59,8 +59,10 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 	colors_filter = {0: (255,255,255), 1:(0,0,255), 2:(255,0,0), 3:(0,0,0)}
 	controller = {
 		'overlay': (
-			((0, 0, 13, 7),(255,255,255)),
-			((1, 1, 11, 5),(0,0,0)),
+			pygame.Rect(0, 0, 13, 1),
+			pygame.Rect(0, 6, 13, 1),
+			pygame.Rect(0, 1, 1, 5),
+			pygame.Rect(12, 1, 1, 5)
 		),
 		'left': ((2,3),(-1,0)),
 		'up': ((3,2),(0,-1)),
@@ -94,17 +96,11 @@ def displayNetwork(inputs, hiddens, outs, tilesvector):
 				pygame.Rect(posx, posy, sizex, sizey)
 			)
 	
-	for miscalenious in controller['overlay']:
+	for rect in controller['overlay']:
 		pygame.draw.rect(
 			screen,
-			miscalenious[1],
-			(
-				tilingoffsetx*1 + tilingx*(1/20 + miscalenious[0][0]),
-				tilingoffsety*0 + tilingy*(1/20 + miscalenious[0][1]),
-				tilingx*(miscalenious[0][2]-1/10),
-				tilingy*(miscalenious[0][3]-1/10)
-			)
-		)
+			(255,255,255),
+			(tilingoffsetx*1 + tilingx*rect[0], tilingoffsety*0 + tilingy*rect[1], tilingx*rect[2], tilingy*rect[3]))
 
 	for button in outs:
 		nuance = 0
@@ -183,16 +179,14 @@ def getMarioPos(tiles):
 	return None
 
 def normalise(tiles):
+	ntiles = [0 for _ in range(reduceSize*reduceSize)]
 	pos = getMarioPos(tiles)
 	if pos is None:
 		return None
-	offset = 1
-	if reduceSize%2 == 0:
-		offset = 0
 	xmin = pos[0]-reduceSize//2
-	xmax = pos[0]+reduceSize//2+offset
+	xmax = pos[0]+reduceSize//2
 	ymin = pos[1]-reduceSize//2
-	ymax = pos[1]+reduceSize//2+offset
+	ymax = pos[1]+reduceSize//2
 	if xmin < 0:
 		xmin = 0
 	if xmax >= len(tiles[0]):
@@ -201,12 +195,8 @@ def normalise(tiles):
 		ymin = 0
 	if ymax >= len(tiles):
 		ymax = len(tiles)-1
-	return transform(xmin, xmax, ymin, ymax, tiles)
-
-def transform(xmin, xmax, ymin, ymax, tiles):
-	ntiles = [0 for _ in range(reduceSize*reduceSize)]
-	for y in range(ymin, ymax):
-		for x in range(xmin, xmax):
+	for y in range(ymin, ymax+1):
+		for x in range(xmin, xmax+1):
 			i = (reduceSize)*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
 			if tile in range(0, 26): #mario
