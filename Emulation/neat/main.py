@@ -215,7 +215,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			(150,150,150) if not active else (0,255,0) if weight > 0 else (255,0,0),
 			perceptrons[id1],
 			perceptrons[id2],
-			math.trunc(abs(weight)+1)*2 if active else 1)
+			math.trunc(abs(weight)+1) if active else 1)
 	
 	for info in range(len(list(infos.keys()))):
 		posx = math.trunc(tilingoffsetx * infosoffset[0])
