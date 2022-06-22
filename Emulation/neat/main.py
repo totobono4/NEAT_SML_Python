@@ -63,8 +63,6 @@ debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
 debut.close()
 
-#def displayNetwork():
-
 def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	screen.fill((0,0,0))
 	size = screen.get_size()

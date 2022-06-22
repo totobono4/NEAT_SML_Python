@@ -7,7 +7,7 @@ def getMarioPos(tiles):
 	for y in range(len(tiles)):
 		for x in range(len(tiles[y])):
 			tile = tiles[y][x]
-			if tile in range(0, 26): #mario
+			if tile in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 66, 67, 68, 69, 70, 71]: #mario
 				return (x, y)
 	return None
 
@@ -30,6 +30,8 @@ def transform(xmin, xmax, ymin, ymax, tiles, options : learnOptions):
 	ntiles = [0 for _ in range(options.reduceSize*options.reduceSize)]
 	for y in range(ymin, ymax):
 		for x in range(xmin, xmax):
+			x = 0 if x < 0 else x
+			y = 0 if y < 0 else y
 			i = (options.reduceSize)*(y-ymin)+(x-xmin)
 			tile = tiles[y][x]
 			looking = True
