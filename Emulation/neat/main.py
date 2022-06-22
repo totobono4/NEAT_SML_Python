@@ -293,7 +293,7 @@ def normalise(tiles):
 	xmin = pos[0]-reduceSize//2+1
 	xmax = pos[0]+reduceSize//2+offset+1
 	ymin = pos[1]-reduceSize//2-offset+1
-	ymax = pos[1]+reduceSize//2-offset+1
+	ymax = pos[1]+reduceSize//2-offset+2
 	if xmin < 0:
 		xmin = 0
 	if xmax >= len(tiles[0]):
