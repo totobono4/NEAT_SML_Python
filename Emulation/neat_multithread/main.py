@@ -4,26 +4,14 @@ import os
 from pyboy import PyBoy, WindowEvent
 import neat
 from pathlib import Path
-from graphviz import Digraph
+from multiprocessing import Value
 import pygame
 import learnOptions as options
 
-PYGAME_SCREEN_WIDTH = 750
-PYGAME_SCREEN_HEIGH = 750
+PYGAME_SCREEN_WIDTH = 350
+PYGAME_SCREEN_HEIGH = 350
 
 root = __file__
-
-
-pyboy = PyBoy(Path(sys.argv[1]).as_posix(), game_wrapper=True, window_type="SDL2")
-pyboy.set_emulation_speed(0)
-sml = pyboy.game_wrapper()
-sml.start_game()
-debut = open("./debut.save", "wb")
-pyboy.save_state(debut)
-debut.close()
-
-pygame.init()
-screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
 outputNames = {
 	"a":0,
@@ -34,25 +22,34 @@ outputNames = {
 	"right":5
 }
 
-# Makes us able to import PyBoy from the directory below
-SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, str(SML_File) + "/..")
+if __name__ != '__main__':
+	pyboy = PyBoy(Path(sys.argv[1]).as_posix(), game_wrapper=True, window_type="SDL2", kwargs="--log-level ERROR")
+	pyboy.set_emulation_speed(0)
+	sml = pyboy.game_wrapper()
 
+	sml.start_game()
+	pygame.init()
 
-#def displayNetwork():
+	debut = open("./debut.save", "wb")
+	pyboy.save_state(debut)
+	debut.close()
+
+	screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
 def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, outs, tilesvector):
 	screen.fill((0,0,0))
 
 	display_width = display_heigh = reduceSize
 
-	tiling = 4
+	tiling = 2
 
 	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
 	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
 
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
+
+	controller_tiling = tilingoffsety/7
 
 	colors_filter = {
 		options.empty: (255,255,255),
@@ -64,7 +61,7 @@ def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, ou
 	}
 	
 	controller = {
-		'offset': (1,0),
+		'offset': (0,1),
 		'overlay': (
 			# controller outline
 			((0.1, 0.1, 12.8, 6.8),(200,200,200)),
@@ -90,13 +87,13 @@ def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, ou
 
 	perceptrons = {}
 
-	hiddenoffset = (0,2)
-	hiddentiling = (4,1)
+	hiddenoffset = (1,0)
+	hiddentiling = (1,1)
 	for hidden in range(len(hiddens)):
 		tilingwidth = display_width * hiddentiling[0]
 		x = hidden % tilingwidth
 		y = math.trunc(hidden / tilingwidth)
-		nuance = (255,255,255)
+		nuance = (75,220,206)
 		posx = math.trunc(tilingoffsetx*hiddenoffset[0] + tilingx*(x+1/20))
 		posy = math.trunc(tilingoffsety*hiddenoffset[1] + tilingy*(y+1/20))
 		sizex = math.trunc(tilingx*(9/10))
@@ -134,10 +131,10 @@ def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, ou
 			screen,
 			miscalenious[1],
 			(
-				tilingoffsetx*controller['offset'][0] + tilingx*(miscalenious[0][0]),
-				tilingoffsety*controller['offset'][1] + tilingy*(miscalenious[0][1]),
-				tilingx*(miscalenious[0][2]),
-				tilingy*(miscalenious[0][3])
+				tilingoffsetx*controller['offset'][0] + controller_tiling*(miscalenious[0][0]),
+				tilingoffsety*controller['offset'][1] + controller_tiling*(miscalenious[0][1]),
+				controller_tiling*(miscalenious[0][2]),
+				controller_tiling*(miscalenious[0][3])
 			)
 		)
 
@@ -145,10 +142,10 @@ def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, ou
 		nuance = 0
 		if outs[button] >= options.minButtonPress:
 			nuance = 1
-		posx = math.trunc(tilingoffsetx*controller['offset'][0] + tilingx*controller[button][0][0])
-		posy = math.trunc(tilingoffsety*controller['offset'][1] + tilingy*controller[button][0][1])
-		sizex = math.trunc(tilingx*controller[button][0][2])
-		sizey = math.trunc(tilingx*controller[button][0][3])
+		posx = math.trunc(tilingoffsetx*controller['offset'][0] + controller_tiling*controller[button][0][0])
+		posy = math.trunc(tilingoffsety*controller['offset'][1] + controller_tiling*controller[button][0][1])
+		sizex = math.trunc(controller_tiling*controller[button][0][2])
+		sizey = math.trunc(controller_tiling*controller[button][0][3])
 
 		pygame.draw.rect(
 			screen,
@@ -159,7 +156,7 @@ def displayNetwork(screen, reduceSize, inputs, outputs, hiddens, connections, ou
 		if button == 'a' or button == 'b':
 			font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*1))
 			img = font.render(str.upper(str(button)), False, (255, 0, 0))
-			screen.blit(img, (posx + tilingx/2, posy + tilingy, sizex, sizey))
+			screen.blit(img, (posx + controller_tiling/2, posy + controller_tiling, sizex, sizey))
 
 		center = (posx + sizex/2, posy + sizey/2)
 		perceptrons[outputNames[button]] = center
@@ -191,7 +188,13 @@ def buildGraph(inputs, outputs, genome):
 	return (connections, hidden)
 
 def runGenome(genome, config):
+
 	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
+
+	debut = open("./debut.save", "rb")
+	pyboy.load_state(debut)
+	pyboy.tick()
+	debut.close()
 
 	info = readLevelInfos(sml, reduceSize)
 	resetInputs(pyboy)
@@ -201,7 +204,7 @@ def runGenome(genome, config):
 	maxStuckFrames = 25
 	maxFitness = fitness
 	
-	while not info["dead"]:
+	while not pyboy.tick():
 		if stuckFrames >= maxStuckFrames:
 			break
 		if info["tiles"] is not None:
@@ -215,7 +218,6 @@ def runGenome(genome, config):
 				"right":out[outputNames["right"]]
 			} #outputs
 			sendInputs(pyboy, manipulations)
-			pyboy.tick()
 
 			graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
 
@@ -234,10 +236,6 @@ def runGenome(genome, config):
 		fitness += sml.coins*10
 	if options.use_score_in_fitness:
 		fitness += sml.score/10
-	debut = open("./debut.save", "rb")
-	pyboy.load_state(debut)
-	pyboy.tick()
-	debut.close()
 	return fitness
 		
 
@@ -354,15 +352,8 @@ def run(config_path):
 	pop.add_reporter(stats)
 	pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 
-	pe = neat.ParallelEvaluator(5, runGenome)
+	pe = neat.ParallelEvaluator(4, runGenome)
 	winner = pop.run(pe.evaluate, 100)
-
-    # Show output of the most fit genome against training data.
-	print('\nOutput:')
-
-	p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
-
-	p.run(pe.evaluate, 10)
 
 if __name__ == '__main__':
 	#while not pyboy.tick():
