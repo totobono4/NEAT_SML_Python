@@ -5,9 +5,9 @@ import os
 from pyboy import PyBoy
 from pathlib import Path
 import pygame
-import numpy
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
+from pyboy import WindowEvent
 
 PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
@@ -43,6 +43,15 @@ sml.start_game()
 
 pygame.init()
 screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH], pygame.RESIZABLE)
+
+outs = {
+        "a": False,
+        "b": False,
+        "up": False,
+        "down": False,
+        "left": False,
+        "right": False
+    } #outputs
 
 def display(goBrrrrr):
     screen.fill((0,0,0))
@@ -130,11 +139,39 @@ def display(goBrrrrr):
                 controller_tiling*(miscalenious[0][3])
             )
         )
+
+    for button in outs:
+        nuance = 1 if outs[button] else 0
+        posx = math.trunc(tilingoffsetx*controller['offset'][0] + controller_tiling*controller[button][0][0])
+        posy = math.trunc(tilingoffsety*controller['offset'][1] + controller_tiling*controller[button][0][1])
+        sizex = math.trunc(controller_tiling*controller[button][0][2])
+        sizey = math.trunc(controller_tiling*controller[button][0][3])
+
+        pygame.draw.rect(
+            screen,
+            pygame.Color(controller[button][1][nuance]),
+            pygame.Rect(posx, posy, sizex, sizey)
+        )
+
+        if button == 'a' or button == 'b':
+            font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*1))
+            img = font.render(str.upper(str(button)), False, (255, 0, 0))
+            screen.blit(img, (posx + controller_tiling/2, posy + controller_tiling, sizex, sizey))
     
     pygame.display.flip()
 
+def pyboyEventHandler():
+    for input in pyboy.get_input():
+        outs["a"] = True if input == WindowEvent.PRESS_BUTTON_A else False if input == WindowEvent.RELEASE_BUTTON_A else outs["a"]
+        outs["b"] = True if input == WindowEvent.PRESS_BUTTON_B else False if input == WindowEvent.RELEASE_BUTTON_B else outs["b"]
+        outs["up"] = True if input == WindowEvent.PRESS_ARROW_UP else False if input == WindowEvent.RELEASE_ARROW_UP else outs["up"]
+        outs["down"] = True if input == WindowEvent.PRESS_ARROW_DOWN else False if input == WindowEvent.RELEASE_ARROW_DOWN else outs["down"]
+        outs["left"] = True if input == WindowEvent.PRESS_ARROW_LEFT else False if input == WindowEvent.RELEASE_ARROW_LEFT else outs["left"]
+        outs["right"] = True if input == WindowEvent.PRESS_ARROW_RIGHT else False if input == WindowEvent.RELEASE_ARROW_RIGHT else outs["right"]
+
 if __name__ == '__main__':
     while not pyboy.tick():
+        pyboyEventHandler()
         info = extractor.readLevelInfos(sml, options)
         if info["tiles"] is not None:
             display(info["tiles"])
