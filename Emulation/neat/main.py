@@ -3,16 +3,15 @@ import sys
 import os
 from pyboy import PyBoy, WindowEvent
 import neat
-import copy
-import visualize
 from pathlib import Path
-from graphviz import Digraph
 import pygame
-import numpy
 import learnOptions as options
 
-PYGAME_SCREEN_WIDTH = 400
+infos = {}
+
+PYGAME_SCREEN_WIDTH = 600
 PYGAME_SCREEN_HEIGH = 400
+size = (PYGAME_SCREEN_WIDTH, PYGAME_SCREEN_HEIGH)
 
 root = __file__
 
@@ -55,9 +54,10 @@ pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if 
 pyboy.set_emulation_speed(0)
 sml = pyboy.game_wrapper()
 sml.start_game()
+infos['fitnessMax'] = sml.fitness
 
 pygame.init()
-screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
+screen = pygame.display.set_mode([PYGAME_SCREEN_WIDTH, PYGAME_SCREEN_HEIGH], pygame.RESIZABLE)
 
 debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
@@ -67,19 +67,36 @@ debut.close()
 
 def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 	global reduceSize
+
 	screen.fill((0,0,0))
+
+	infos['fitnessMax'] = infos['fitness'] if infos['fitness'] > infos['fitnessMax'] else infos['fitnessMax']
 
 	display_width = display_heigh = reduceSize
 
-	tiling = 2
+	tiling = (3,2)
 
-	tilingoffsetx = PYGAME_SCREEN_WIDTH/tiling
-	tilingoffsety = PYGAME_SCREEN_HEIGH/tiling
+	tilingoffsetx : int
+	tilingoffsety : int
+	
+	if size[0] / tiling[0] < size[1] / tiling[1]:
+		tilingoffsetx = size[0] / tiling[0]
+		tilingoffsety = tilingoffsetx
+	else:
+		tilingoffsety = size[1] / tiling[1]
+		tilingoffsetx = tilingoffsety
 
 	tilingx = tilingoffsetx/display_width
 	tilingy = tilingoffsety/display_heigh
 
 	controller_tiling = tilingoffsety/7
+	
+	perceptrons = {}
+
+	hiddenoffset = (1,0)
+	hiddentiling = (1,1)
+
+	infosoffset = (2,0)
 
 	colors_filter = {
 		options.empty: (255,255,255),
@@ -115,10 +132,6 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		'b': ((8.1,4.1,.7,.7),((255,0,0),(150,0,0)))
 	}
 
-	perceptrons = {}
-
-	hiddenoffset = (1,0)
-	hiddentiling = (1,1)
 	for hidden in range(len(hiddens)):
 		tilingwidth = display_width * hiddentiling[0]
 		x = hidden % tilingwidth
@@ -203,6 +216,16 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 			perceptrons[id2],
 			math.trunc(abs(weight)+1)*2 if active else 1)
 	
+	for info in range(len(list(infos.keys()))):
+		posx = math.trunc(tilingoffsetx * infosoffset[0])
+		posy = math.trunc(tilingoffsety * infosoffset[1] + info * tilingy)
+		sizex = math.trunc(tilingoffsetx)
+		sizey = math.trunc(tilingoffsety)
+
+		font = pygame.font.SysFont('didot.ttc', math.trunc(sizex/tiling[0]/2))
+		img = font.render(list(infos.keys())[info] + ': ' + str(infos[list(infos.keys())[info]]), False, (255, 255, 0))
+		screen.blit(img, (posx, posy, sizex, sizey))
+	
 	pygame.display.flip()
 
 def buildGraph(inputs, outputs, genome):
@@ -224,7 +247,7 @@ def runGenome(genome, config):
 	fitness = 0 
 	net = neat.nn.FeedForwardNetwork.create(genome, config)
 	stuckFrames = 0
-	maxStuckFrames = 25
+	maxStuckFrames = 60
 	maxFitness = fitness
 	
 	while not info["dead"]:
@@ -245,7 +268,7 @@ def runGenome(genome, config):
 
 			graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
 
-
+			infos['fitness'] = fitness
 			displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
 			info = readLevelInfos()
 			fitness = 0 if sml.level_progress is None else sml.level_progress
@@ -271,6 +294,7 @@ def step(genomes, config):
 	for genome_id, genome in genomes:		
 		print("Gen : "+str(gen)+" : "+str(len(genomes)), end="\r")
 		gen+=1
+		infos['gen'] = str(gen)+" ("+str(int(gen/len(genomes)*100))+"%)"
 		genome.fitness = runGenome(genome, config)
 		
 
@@ -398,10 +422,6 @@ def run(config_path):
 	p.run(step, 10)
 
 if __name__ == '__main__':
-	#while not pyboy.tick():
-	#	pass
-	#pyboy.stop()
-	#print(sml)
 	dirname = os.path.dirname(__file__)
 	run(config_File)
 

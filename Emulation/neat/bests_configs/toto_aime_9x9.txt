@@ -4,17 +4,17 @@
 fitness_criterion     = max
 fitness_threshold     = 3.9
 no_fitness_termination = True
-pop_size              = 50
+pop_size              = 100
 reset_on_extinction   = False
 
 [DefaultGenome]
 # node activation options
-activation_default      = random
+activation_default      = sigmoid
 activation_mutate_rate  = 0.2
 activation_options      = sigmoid
 
 # node aggregation options
-aggregation_default     = random
+aggregation_default     = sum
 aggregation_mutate_rate = 0.2
 aggregation_options     = sum
 
@@ -37,10 +37,10 @@ conn_delete_prob        = 0.5
 
 # connection enable options
 enabled_default         = True
-enabled_mutate_rate     = 0
+enabled_mutate_rate     = 1
 
 feed_forward            = True
-initial_connection      = partial_direct .005
+initial_connection      = partial_direct 0.002
 
 # node add/remove rates
 node_add_prob           = 0.5
