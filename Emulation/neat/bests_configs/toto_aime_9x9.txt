@@ -40,7 +40,7 @@ enabled_default         = True
 enabled_mutate_rate     = 0
 
 feed_forward            = True
-initial_connection      = partial_direct .001
+initial_connection      = partial_direct .005
 
 # node add/remove rates
 node_add_prob           = 0.5
