@@ -1,4 +1,5 @@
 import math
+from multiprocessing import Event
 import sys
 import os
 from pyboy import PyBoy, WindowEvent
@@ -14,7 +15,6 @@ infos = {}
 
 PYGAME_SCREEN_WIDTH = 600
 PYGAME_SCREEN_HEIGH = 400
-size = (PYGAME_SCREEN_WIDTH, PYGAME_SCREEN_HEIGH)
 
 root = __file__
 
@@ -67,16 +67,13 @@ debut.close()
 #def displayNetwork():
 
 def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
-	global reduceSize
-
 	screen.fill((0,0,0))
+	size = screen.get_size()
 
 	infos['fitnessMax'] = infos['fitness'] if infos['fitness'] > infos['fitnessMax'] else infos['fitnessMax']
-
 	display_width = display_heigh = options.reduceSize
 
 	tiling = (3,2)
-
 	tilingoffsetx : int
 	tilingoffsety : int
 	

@@ -15,19 +15,13 @@ def normalise(tiles, reduceSize, options):
 	pos = getMarioPos(tiles)
 	if pos is None:
 		return None
-	offset = 1
-	if reduceSize%2 == 0:
-		offset = 0
+	offset = 0 if reduceSize%2 == 0 else 1
 	xmin = pos[0]-reduceSize//2+1
 	xmax = pos[0]+reduceSize//2+offset+1
 	ymin = pos[1]-reduceSize//2-offset+1
 	ymax = pos[1]+reduceSize//2-offset+1
-	if xmin < 0:
-		xmin = 0
 	if xmax >= len(tiles[0]):
 		xmax = len(tiles[0])-1
-	if ymin < 0:
-		ymin = 0
 	if ymax >= len(tiles):
 		ymax = len(tiles)-1
 	return transform(xmin, xmax, ymin, ymax, tiles, options)
