@@ -38,7 +38,7 @@ single_structural_mutation = True
 
 # connection enable options
 enabled_default         = True
-enabled_mutate_rate     = 0
+enabled_mutate_rate     = 0.3
 
 feed_forward            = True
 initial_connection      = partial_direct 0.005

@@ -6,7 +6,10 @@ import neat
 from pathlib import Path
 from multiprocessing import Value
 import pygame
-import learnOptions as options
+import utils.learnOptions as options
+import utils.dataExtractor as extractor
+import utils.inputManager as manager
+import pickle
 
 PYGAME_SCREEN_WIDTH = 350
 PYGAME_SCREEN_HEIGH = 350
@@ -189,15 +192,15 @@ def buildGraph(inputs, outputs, genome):
 
 def runGenome(genome, config):
 
-	reduceSize = int(math.sqrt(config.genome_config.num_inputs))
+	options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
 	debut = open("./debut.save", "rb")
 	pyboy.load_state(debut)
 	pyboy.tick()
 	debut.close()
 
-	info = readLevelInfos(sml, reduceSize)
-	resetInputs(pyboy)
+	info = extractor.readLevelInfos(sml, options)
+	manager.resetInputs(pyboy)
 	fitness = 0 
 	net = neat.nn.FeedForwardNetwork.create(genome, config)
 	stuckFrames = 0
@@ -217,13 +220,13 @@ def runGenome(genome, config):
 				"left":out[outputNames["left"]],
 				"right":out[outputNames["right"]]
 			} #outputs
-			sendInputs(pyboy, manipulations)
+			manager.sendInputs(manipulations, pyboy, options)
 
 			graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
 
 
-			displayNetwork(screen, reduceSize, config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
-			info = readLevelInfos(sml, reduceSize)
+			displayNetwork(screen, options.reduceSize, config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
+			info = extractor.readLevelInfos(sml, options)
 			fitness = 0 if sml.level_progress is None else sml.level_progress
 			if fitness <= maxFitness:
 				stuckFrames += 1
@@ -237,103 +240,6 @@ def runGenome(genome, config):
 	if options.use_score_in_fitness:
 		fitness += sml.score/10
 	return fitness
-		
-
-def getMarioPos(tiles):
-	for y in range(len(tiles)):
-		for x in range(len(tiles[y])):
-			tile = tiles[y][x]
-			if tile in range(0, 26): #mario
-				return (x, y)
-	return None
-
-def normalise(tiles, reduceSize):
-	pos = getMarioPos(tiles)
-	if pos is None:
-		return None
-	offset = 1
-	if reduceSize%2 == 0:
-		offset = 0
-	xmin = pos[0]-reduceSize//2+1
-	xmax = pos[0]+reduceSize//2+offset+1
-	ymin = pos[1]-reduceSize//2+1
-	ymax = pos[1]+reduceSize//2+offset+1
-	if xmin < 0:
-		xmin = 0
-	if xmax >= len(tiles[0]):
-		xmax = len(tiles[0])-1
-	if ymin < 0:
-		ymin = 0
-	if ymax >= len(tiles):
-		ymax = len(tiles)-1
-	return transform(xmin, xmax, ymin, ymax, tiles, reduceSize)
-
-def transform(xmin, xmax, ymin, ymax, tiles, reduceSize):
-	ntiles = [0 for _ in range(reduceSize*reduceSize)]
-	for y in range(ymin, ymax):
-		for x in range(xmin, xmax):
-			i = (reduceSize)*(y-ymin)+(x-xmin)
-			tile = tiles[y][x]
-			looking = True
-			select = None
-			while(looking):
-				if select is None:
-					for activator in options.activation:
-						if options.activation[activator][2](tile):
-							if not options.activation[activator][0]:
-								select = options.activation[activator][1]
-							else:
-								select = activator
-								looking = False
-							break
-					if select is None:
-						select = options.empty
-						looking = False
-				else:
-					if select not in options.activation:
-						looking = False
-					elif options.activation[select][2](tile):
-						if not options.activation[select][0]:
-							select = options.activation[select][1]
-						else:
-							looking = False
-					else:
-						looking = False
-			ntiles[i] = select
-	return ntiles
-
-def readLevelInfos(sml, reduceSize): 
-	area = sml.game_area()
-	tiles = normalise(area, reduceSize)
-	levelInfo = {
-        "dead":sml.lives_left <= 1, 
-        "tiles":tiles
-    }
-	return levelInfo
-
-def resetInputs(pyboy):
-	pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-	pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-
-
-def sendInputs(pyboy, manipulations):
-	resetInputs(pyboy)
-	if manipulations["a"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	if manipulations["b"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	if manipulations["up"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	if manipulations["down"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	if manipulations["left"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	if manipulations["right"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
 
 def run(config_path):
 	config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
@@ -346,10 +252,15 @@ def run(config_path):
 	pop.add_reporter(neat.StdOutReporter(True))
 	stats = neat.StatisticsReporter()
 	pop.add_reporter(stats)
-	pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
+	saver = neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-')
+	pop.add_reporter(saver)
 
 	pe = neat.ParallelEvaluator(4, runGenome)
-	winner = pop.run(pe.evaluate, 100)
+	winner = pop.run(pe.evaluate)
+
+	with open("winner.pkl", "wb") as f:
+		pickle.dump(winner, f)
+		f.close()
 
 if __name__ == '__main__':
 	#while not pyboy.tick():
