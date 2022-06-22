@@ -223,7 +223,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
 		sizex = math.trunc(tilingoffsetx)
 		sizey = math.trunc(tilingoffsety)
 
-		font = pygame.font.SysFont('didot.ttc', math.trunc(sizex/tiling[0]/2))
+		font = pygame.font.SysFont('didot.ttc', math.trunc(sizex/tiling[0]/2*3/4))
 		img = font.render(list(infos.keys())[info] + ': ' + str(infos[list(infos.keys())[info]]), False, (255, 255, 0))
 		screen.blit(img, (posx, posy, sizex, sizey))
 	
