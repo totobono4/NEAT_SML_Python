@@ -4,7 +4,7 @@ import tensorflow as tf
 import random
 import numpy as np
 
-epsilon = 0.8
+epsilon = 1
 
 def getAgent(state_shape, action_shape):
     learning_rate = 0.001
@@ -13,7 +13,7 @@ def getAgent(state_shape, action_shape):
     model.add(keras.layers.Dense(24, input_shape=state_shape, activation='relu', kernel_initializer = init))
     model.add(keras.layers.Dense(12, activation='relu', kernel_initializer=init))
     model.add(keras.layers.Dense(action_shape, activation='linear', kernel_initializer=init))
-    model.compile(loss=tf.keras.losses.Huber(), optimizer=tf.keras.optimizers.Adam(lr=learning_rate), metrics=['accuracy'])
+    model.compile(loss=tf.keras.losses.Huber(), optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), metrics=['accuracy'])
     return model
 
 def getSolution(agent : keras.Sequential, state, actions):

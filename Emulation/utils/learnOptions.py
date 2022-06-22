@@ -1,5 +1,3 @@
-
-
 empty = 0
 mario = 1
 enemy = 2
@@ -26,3 +24,5 @@ activation = {
 }
 
 minButtonPress = 0.85
+
+reduceSize= 5

@@ -1,16 +1,13 @@
 from collections import deque
-from multiprocessing.dummy import current_process
-from turtle import reset
-import tensorflow as tf
 import sys
 import os
-from typing import NewType
-from pyboy import PyBoy, WindowEvent
 import network
 from pathlib import Path
 import numpy as np
-import pygame
-import learnOptions as options
+import utils.inputManager as manager
+import utils.dataExtractor as extractor
+import utils.learnOptions as options
+from pyboy import PyBoy
 
 PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
@@ -53,104 +50,6 @@ sml.start_game()
 #pygame.init()
 #screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
-def getMarioPos(tiles):
-	for y in range(len(tiles)):
-		for x in range(len(tiles[y])):
-			tile = tiles[y][x]
-			if tile in range(0, 26): #mario
-				return (x, y)
-	return None
-
-def normalise(tiles):
-	global reduceSize
-	pos = getMarioPos(tiles)
-	if pos is None:
-		return None
-	offset = 1
-	if reduceSize%2 == 0:
-		offset = 0
-	xmin = pos[0]-reduceSize//2+1
-	xmax = pos[0]+reduceSize//2+offset+1
-	ymin = pos[1]-reduceSize//2+1
-	ymax = pos[1]+reduceSize//2+offset+1
-	if xmin < 0:
-		xmin = 0
-	if xmax >= len(tiles[0]):
-		xmax = len(tiles[0])-1
-	if ymin < 0:
-		ymin = 0
-	if ymax >= len(tiles):
-		ymax = len(tiles)-1
-	return transform(xmin, xmax, ymin, ymax, tiles)
-
-def transform(xmin, xmax, ymin, ymax, tiles):
-	global reduceSize
-	ntiles = [0 for _ in range(reduceSize*reduceSize)]
-	for y in range(ymin, ymax):
-		for x in range(xmin, xmax):
-			i = (reduceSize)*(y-ymin)+(x-xmin)
-			tile = tiles[y][x]
-			looking = True
-			select = None
-			while(looking):
-				if select is None:
-					for activator in options.activation:
-						if options.activation[activator][2](tile):
-							if not options.activation[activator][0]:
-								select = options.activation[activator][1]
-							else:
-								select = activator
-								looking = False
-							break
-					if select is None:
-						select = options.empty
-						looking = False
-				else:
-					if select not in options.activation:
-						looking = False
-					elif options.activation[select][2](tile):
-						if not options.activation[select][0]:
-							select = options.activation[select][1]
-						else:
-							looking = False
-					else:
-						looking = False
-			ntiles[i] = select
-	return ntiles
-
-def readLevelInfos(): 
-	area = sml.game_area()
-	tiles = normalise(area)
-	levelInfo = {
-        "dead":sml.lives_left <= 1, 
-        "tiles":tiles
-    }
-	return levelInfo
-
-def resetInputs():
-	pyboy.send_input(WindowEvent.RELEASE_BUTTON_A)
-	pyboy.send_input(WindowEvent.RELEASE_BUTTON_B)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_UP)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_LEFT)
-	pyboy.send_input(WindowEvent.RELEASE_ARROW_RIGHT)
-
-
-def sendInputs(manipulations):
-	resetInputs()
-	if manipulations["a"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_BUTTON_A)
-	if manipulations["b"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_BUTTON_B)
-	if manipulations["up"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_UP)
-	if manipulations["down"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_DOWN)
-	if manipulations["left"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_LEFT)
-	if manipulations["right"]>=options.minButtonPress:
-		pyboy.send_input(WindowEvent.PRESS_ARROW_RIGHT)
-
 train_epoch = 300
 current_progress = 0
 max_progress = 0
@@ -167,12 +66,12 @@ def step(action):
 		"right":action[outputNames["right"]],
 	}
 
-	sendInputs(buttonpresses)
+	manager.sendInputs(buttonpresses, pyboy, options)
 	pyboy.tick()
 
 	reward = sml.level_progress - start
 	reward += (sml.lives_left-2)*100 #losing lives is bad
-	new_state = readLevelInfos()["tiles"]
+	new_state = extractor.readLevelInfos(sml, options)["tiles"]
 	return (new_state, reward)
 
 def main():
@@ -194,9 +93,9 @@ def main():
 	for epoch in range(train_epoch):
 		sml.reset_game()
 		total_training_rewards = 0
-		state = readLevelInfos()["tiles"]
+		state = extractor.readLevelInfos(sml, options)["tiles"]
 		while not sml.game_over():
-			resetInputs()
+			manager.resetInputs(pyboy)
 			steps_to_update_target_model += 1
 			action = network.getSolution(mainmodel, state, list(outputNames.values()))
 			new_state, reward = step(action)
