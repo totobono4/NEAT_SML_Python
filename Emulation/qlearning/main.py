@@ -74,16 +74,12 @@ def normalise(tiles):
 	ymin = pos[1]-reduceSize//2+1
 	ymax = pos[1]+reduceSize//2+offset+1
 	if xmin < 0:
-		xmax += abs(xmin)
 		xmin = 0
 	if xmax >= len(tiles[0]):
-		xmin -= xmax-len(tiles[0])+1
 		xmax = len(tiles[0])-1
 	if ymin < 0:
-		ymax += abs(ymin)
 		ymin = 0
 	if ymax >= len(tiles):
-		ymin -= ymax-len(tiles)+1
 		ymax = len(tiles)-1
 	return transform(xmin, xmax, ymin, ymax, tiles)
 
