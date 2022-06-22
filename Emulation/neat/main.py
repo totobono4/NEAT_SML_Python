@@ -244,10 +244,13 @@ def runGenome(genome, config):
 	net = neat.nn.FeedForwardNetwork.create(genome, config)
 	stuckFrames = 0
 	maxStuckFrames = 60
+	noProgressFrames = 0
+	maxNoProgressFrames = 600
+	lastFitness = fitness
 	maxFitness = fitness
 	
 	while not info["dead"]:
-		if stuckFrames >= maxStuckFrames:
+		if stuckFrames >= maxStuckFrames or noProgressFrames >= maxNoProgressFrames:
 			break
 		if info["tiles"] is not None:
 			out = net.activate([ x/6 for x in info["tiles"]])
@@ -269,10 +272,15 @@ def runGenome(genome, config):
 			info = extractor.readLevelInfos(sml, options)
 			fitness = 0 if sml.level_progress is None else sml.level_progress
 			if fitness <= maxFitness:
-				stuckFrames += 1
+				noProgressFrames += 1
 			else:
 				maxFitness = fitness
+				noProgressFrames = 0
+			if fitness == lastFitness:
+				stuckFrames += 1
+			else:
 				stuckFrames = 0
+			lastFitness = fitness
 		else:
 			break
 	if options.use_coins_in_fitness:
