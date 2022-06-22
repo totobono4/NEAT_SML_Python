@@ -32,8 +32,8 @@ compatibility_disjoint_coefficient = 0.5
 compatibility_weight_coefficient   = 0.92
 
 # connection add/remove rates
-conn_add_prob           = 0.5
-conn_delete_prob        = 0.5
+conn_add_prob           = 0.2
+conn_delete_prob        = 0.2
 
 # connection enable options
 enabled_default         = True
