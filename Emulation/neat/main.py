@@ -67,6 +67,9 @@ debut = open("./debut.save", "wb")
 pyboy.save_state(debut)
 debut.close()
 
+if not flagInfos:
+    PYGAME_SCREEN_WIDTH = 400
+
 def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
     infos['inputs'] = len(inputs)
     infos['hiddens'] = len(hiddens)
@@ -79,7 +82,10 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
     infos['fitnessMax'] = infos['fitness'] if infos['fitness'] > infos['fitnessMax'] else infos['fitnessMax']
     display_width = display_heigh = options.reduceSize
 
-    tiling = (3,2)
+    tiling = (2,2)
+    if flagInfos:
+        tiling = (3,2)
+
     tilingoffsetx : int
     tilingoffsety : int
     
