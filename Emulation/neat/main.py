@@ -70,6 +70,10 @@ sml.start_game()
 infos['generation'] = -1
 infos['fitnessMax'] = sml.fitness
 
+f_save_state = open(save_state, "rb")
+pyboy.load_state(f_save_state)
+f_save_state.close()
+
 if not flagInfos:
     PYGAME_SCREEN_WIDTH = 400
 
@@ -341,8 +345,6 @@ def run(config_path):
     print('\nOutput:')
 
     p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
-    pyboy.set_emulation_speed(0)
-
     p.run(step, 10)
 
 if __name__ == '__main__':
