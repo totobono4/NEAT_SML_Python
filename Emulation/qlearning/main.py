@@ -60,9 +60,9 @@ episodes = 300
 batch = 1000
 observeTime = 400*35 #lenght of a game
 
-
+#steps in the game
 def step(act, previous):
-	buttonpresses = {
+	buttonpresses = { #transforms raw network data into game controll data
 		"a":outputNames["a"] == act,
 		"b":outputNames["b"] == act,
 		"up":outputNames["up"] == act,
@@ -70,15 +70,15 @@ def step(act, previous):
 		"left":outputNames["left"] == act,
 		"right":outputNames["right"] == act,
 	}
-	manager.sendInputs(buttonpresses, pyboy, options)
+	manager.sendInputs(buttonpresses, pyboy, options) #press on buttons
 	pyboy.tick()
-	return (sml.level_progress - previous)*20
+	return (sml.level_progress - previous)*20 #compute reward
 
 
 def main():
-	agent = network.getAgent(reduceSize*reduceSize, len(outputNames))
-	for i in range(100000):
-		network.train(agent, sml, list(outputNames.values()), reduceSize*reduceSize, len(outputNames), step)
+	agent = network.getAgent(reduceSize*reduceSize, len(outputNames)) #generate agent with project scale
+	for i in range(100000): #trains the agent several times
+		network.train(agent, sml, list(outputNames.values()), step)
 		
 
 
