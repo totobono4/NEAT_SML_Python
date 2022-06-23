@@ -6,10 +6,13 @@ import neat
 from pathlib import Path
 from multiprocessing import Value
 import pygame
+import pickle
+
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
 import utils.inputManager as manager
-import pickle
 
 PYGAME_SCREEN_WIDTH = 350
 PYGAME_SCREEN_HEIGH = 350

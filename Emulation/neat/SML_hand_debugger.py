@@ -5,9 +5,12 @@ import os
 from pyboy import PyBoy
 from pathlib import Path
 import pygame
+from pyboy import WindowEvent
+
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
-from pyboy import WindowEvent
 
 PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
@@ -98,10 +101,6 @@ def display(goBrrrrr):
                 pygame.Color(nuance),
                 pygame.Rect(posx, posy, sizex, sizey)
             )
-
-            font = pygame.font.SysFont('didot.ttc', math.trunc(sizex*3/4))
-            img = font.render(str(rawvalue), False, (0, 0, 0))
-            screen.blit(img, (posx, posy, sizex, sizey))
 
     controller = {
         'offset': (0,1),

@@ -20,10 +20,10 @@ def normalise(tiles, reduceSize, options):
     xmax = pos[0]+reduceSize//2+offset+1
     ymin = pos[1]-reduceSize//2-offset+1
     ymax = pos[1]+reduceSize//2-offset+1
-    if xmax >= len(tiles[0]):
-        xmax = len(tiles[0])-1
-    if ymax >= len(tiles):
-        ymax = len(tiles)-1
+    if xmax > len(tiles[0]):
+        xmax = len(tiles[0])
+    if ymax > len(tiles):
+        ymax = len(tiles)
     return transform(xmin, xmax, ymin, ymax, tiles, options)
 
 def transform(xmin, xmax, ymin, ymax, tiles, options : learnOptions):

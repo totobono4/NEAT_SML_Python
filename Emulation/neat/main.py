@@ -5,6 +5,9 @@ from pyboy import PyBoy
 import neat
 from pathlib import Path
 import pygame
+
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
 import utils.inputManager as manager
