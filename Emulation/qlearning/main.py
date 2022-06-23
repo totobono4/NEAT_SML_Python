@@ -6,12 +6,15 @@ from time import sleep
 import network
 from pathlib import Path
 import numpy as np
-import utils.inputManager as manager
-import utils.dataExtractor as extractor
-import utils.learnOptions as options
 from pyboy import PyBoy
 import gym
 import math
+
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
+import utils.learnOptions as options
+import utils.dataExtractor as extractor
+import utils.inputManager as manager
 
 PYGAME_SCREEN_WIDTH = 750
 PYGAME_SCREEN_HEIGH = 750
