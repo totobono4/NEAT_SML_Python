@@ -1,3 +1,4 @@
+from asyncio import windows_events
 import math
 import sys
 import os
@@ -14,7 +15,7 @@ import utils.inputManager as manager
 
 infos = {}
 
-PYGAME_SCREEN_WIDTH = 600
+PYGAME_SCREEN_WIDTH = 700
 PYGAME_SCREEN_HEIGH = 400
 
 root = __file__
@@ -59,16 +60,23 @@ else:
     print("Usage: python SML_IA.py [ROM file] [config file] [save state file]")
     exit(1)
 
+if len(sys.argv) > 4:
+    winner_File = Path( sys.argv[4] )
+else:
+    print("Usage: python SML_IA.py [ROM file] [config file] [save state file] [winner file]")
+    exit(1)
+
 quiet = "--quiet" in sys.argv
 debugging = "--debug" in sys.argv
 flagInfos = "--Infos" in sys.argv
 flagDisplay = "--Display" in sys.argv
 pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
-pyboy.set_emulation_speed(0)
+pyboy.set_emulation_speed(1)
 sml = pyboy.game_wrapper()
 sml.start_game()
 infos['generation'] = -1
 infos['fitnessMax'] = sml.fitness
+infos['fitness'] = sml.fitness
 
 f_save_state = open(save_state, "rb")
 pyboy.load_state(f_save_state)
@@ -259,23 +267,27 @@ def buildGraph(inputs, outputs, genome):
             hidden.add(connectionobj.key[1])
     return (connections, hidden)
 
-def runGenome(genome, config):
-    info = extractor.readLevelInfos(sml, options)
-    manager.resetInputs(pyboy)
-    fitness = 0 
+def replay_genome(config_path, genome_path):
+    config = neat.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet, 
+        neat.DefaultStagnation,
+        config_path
+    )
+
+    options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
+
+    with open(genome_path, "rb") as f:
+        genome = pickle.load(f)
+
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    stuckFrames = 0
-    maxStuckFrames = 60
-    noProgressFrames = 0
-    maxNoProgressFrames = 600
-    lastFitness = fitness
-    maxFitness = fitness
-    
-    while not info["dead"]:
-        if stuckFrames >= maxStuckFrames or noProgressFrames >= maxNoProgressFrames:
-            break
-        if info["tiles"] is not None:
-            out = net.activate([ x/6 for x in info["tiles"]])
+
+    while not sml.lives_left < 2:
+        tiles = extractor.readLevelInfos(sml, options)["tiles"]
+        if tiles is not None and not None in tiles:
+            out = net.activate([ x/6 for x in tiles])
+
             manipulations = {
                 "a":out[outputNames["a"]],
                 "b":out[outputNames["b"]],
@@ -285,71 +297,12 @@ def runGenome(genome, config):
                 "right":out[outputNames["right"]]
             } #outputs
             manager.sendInputs(manipulations, pyboy, options)
-            pyboy.tick()
-
+            
             graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
+            displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, tiles)
+        pyboy.tick()
+        infos['fitness'] = sml.fitness
 
-            infos['fitness'] = fitness
-            if flagDisplay:
-                displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
-            info = extractor.readLevelInfos(sml, options)
-            fitness = 0 if sml.level_progress is None else sml.level_progress
-            if fitness <= maxFitness:
-                noProgressFrames += 1
-            else:
-                maxFitness = fitness
-                noProgressFrames = 0
-            if fitness == lastFitness:
-                stuckFrames += 1
-            else:
-                stuckFrames = 0
-            lastFitness = fitness
-        else:
-            break
-    if options.use_coins_in_fitness:
-        fitness += sml.coins*10
-    if options.use_score_in_fitness:
-        fitness += sml.score/10
-    f_save_state = open(save_state, "rb")
-    pyboy.load_state(f_save_state)
-    f_save_state.close()
-    pyboy.tick()
-    return fitness
-
-def step(genomes, config):
-    infos['generation'] += 1
-    gen = 0
-    for genome_id, genome in genomes:        
-        print("Gen : "+str(gen)+" : "+str(len(genomes)), end="\r")
-        gen+=1
-        infos['individual'] = str(gen)+" ("+str(int(gen/len(genomes)*100))+"%)"
-        genome.fitness = runGenome(genome, config)
-
-def run(config_path):
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
-        neat.DefaultSpeciesSet, neat.DefaultStagnation,
-        config_path)
-    options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
-
-    pop = neat.Population(config)
-
-    # Add a stdout reporter to show progress in the terminal.
-    pop.add_reporter(neat.StdOutReporter(True))
-    stats = neat.StatisticsReporter()
-    pop.add_reporter(stats)
-    pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
-
-    winner = pop.run(step)
-
-    with open(f"winners/winner_{config_File.stem}.pkl", "wb") as f:
-        pickle.dump(winner, f)
-        f.close()
-
-    # Show output of the most fit genome against training data.
-    print('\nOutput:')
-
-    #p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
-    #p.run(step, 10)
 
 if __name__ == '__main__':
     if flagDisplay:
@@ -357,7 +310,7 @@ if __name__ == '__main__':
         screen = pygame.display.set_mode([PYGAME_SCREEN_WIDTH, PYGAME_SCREEN_HEIGH], pygame.RESIZABLE)
 
     dirname = os.path.dirname(__file__)
-    run(config_File)
+    replay_genome(config_File, winner_File)
 
     if flagDisplay:
         pygame.quit()
