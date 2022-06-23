@@ -54,8 +54,8 @@ else:
 
 quiet = "--quiet" in sys.argv
 debugging = "--debug" in sys.argv
-toggleInfos = "--toggleInfos" in sys.argv
-toggleDisplay = "--toggleDisplay" in sys.argv
+flagInfos = "--Infos" in sys.argv
+flagDisplay = "--Display" in sys.argv
 pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
 pyboy.set_emulation_speed(0)
 sml = pyboy.game_wrapper()
@@ -220,7 +220,7 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
             perceptrons[id2],
             math.trunc(abs(weight)+1) * sizex // 10 if active else 1)
 
-    if toggleInfos:
+    if flagInfos:
         for info in range(len(list(infos.keys()))):
             posx = math.trunc(tilingoffsetx * infosoffset[0])
             posy = math.trunc(tilingoffsety * infosoffset[1] + info * tilingy)
@@ -277,7 +277,7 @@ def runGenome(genome, config):
             graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
 
             infos['fitness'] = fitness
-            if toggleDisplay:
+            if flagDisplay:
                 displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, info["tiles"])
             info = extractor.readLevelInfos(sml, options)
             fitness = 0 if sml.level_progress is None else sml.level_progress
@@ -337,12 +337,12 @@ def run(config_path):
     p.run(step, 10)
 
 if __name__ == '__main__':
-    if toggleDisplay:
+    if flagDisplay:
         pygame.init()
         screen = pygame.display.set_mode([PYGAME_SCREEN_WIDTH, PYGAME_SCREEN_HEIGH], pygame.RESIZABLE)
 
     dirname = os.path.dirname(__file__)
     run(config_File)
 
-    if toggleDisplay:
+    if flagDisplay:
         pygame.quit()
