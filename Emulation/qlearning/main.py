@@ -1,10 +1,14 @@
 from collections import deque
+from functools import total_ordering
 import sys
 import os
+from time import sleep
 import network
 from pathlib import Path
 import numpy as np
 from pyboy import PyBoy
+import gym
+import math
 
 sys.path.append(str(Path(Path().cwd().parent)))
 import utils.learnOptions as options
@@ -52,73 +56,32 @@ sml.start_game()
 #pygame.init()
 #screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH])
 
-train_epoch = 300
-current_progress = 0
-max_progress = 0
-start = sml.level_progress
+episodes = 300
+batch = 1000
+observeTime = 400*35 #lenght of a game
 
-def step(action):
-	global current_progress
+
+def step(act, previous):
 	buttonpresses = {
-		"a":action[outputNames["a"]],
-		"b":action[outputNames["b"]],
-		"up":action[outputNames["up"]],
-		"down":action[outputNames["down"]],
-		"left":action[outputNames["left"]],
-		"right":action[outputNames["right"]],
+		"a":outputNames["a"] == act,
+		"b":outputNames["b"] == act,
+		"up":outputNames["up"] == act,
+		"down":outputNames["down"] == act,
+		"left":outputNames["left"] == act,
+		"right":outputNames["right"] == act,
 	}
-
 	manager.sendInputs(buttonpresses, pyboy, options)
 	pyboy.tick()
+	return (sml.level_progress - previous)*20
 
-	reward = sml.level_progress - start
-	reward += (sml.lives_left-2)*100 #losing lives is bad
-	new_state = extractor.readLevelInfos(sml, options)["tiles"]
-	return (new_state, reward)
 
 def main():
-	global current_progress
-	max_epsilon = 1 # You can't explore more than 100% of the time
-	min_epsilon = 0.01 # At a minimum, we'll always explore 1% of the time
-	decay = 0.01
+	agent = network.getAgent(reduceSize*reduceSize, len(outputNames))
+	for i in range(100000):
+		network.train(agent, sml, list(outputNames.values()), reduceSize*reduceSize, len(outputNames), step)
+		
 
-	current_progess = sml.level_progress
-	mainmodel = network.getAgent((reduceSize*reduceSize,), len(outputNames))
 
-	targetmodel = network.getAgent((reduceSize*reduceSize,), len(outputNames))
-	targetmodel.set_weights(mainmodel.get_weights())
-
-	replay_memory = deque(maxlen = 50_000)
-
-	steps_to_update_target_model = 0
-
-	for epoch in range(train_epoch):
-		sml.reset_game()
-		total_training_rewards = 0
-		state = extractor.readLevelInfos(sml, options)["tiles"]
-		while not sml.game_over():
-			manager.resetInputs(pyboy)
-			steps_to_update_target_model += 1
-			action = network.getSolution(mainmodel, state, list(outputNames.values()))
-			new_state, reward = step(action)
-			replay_memory.append([state, action, reward, new_state])
-
-			if steps_to_update_target_model % 4 == 0 or (sml.game_over() and sml.lives_left > 0):
-				network.train(replay_memory, mainmodel, targetmodel)
-
-			state = new_state
-			total_training_rewards += reward
-		if sml.lives_left > 0:
-			print('Total training rewards: {} after n steps = {} with final reward = {}'.format(total_training_rewards, epoch, reward))
-			total_training_rewards += 1
-
-			if steps_to_update_target_model >= 100:
-				print('Copying main network weights to the target network weights')
-				targetmodel.set_weights(mainmodel.get_weights())
-				steps_to_update_target_model = 0
-			break
-
-		network.epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay * epoch)
 
 if __name__ == "__main__":
 	main()
