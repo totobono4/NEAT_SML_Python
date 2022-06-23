@@ -4,6 +4,11 @@ import tensorflow as tf
 import random
 import numpy as np
 import copy
+from pathlib import Path
+import sys
+import os
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
 import utils.dataExtractor as extractor
 import utils.learnOptions as options
 import math
@@ -129,6 +134,7 @@ def train_model(agent, states, nbstates, rewards, next_states, actions, nbaction
     tf_actions = np.array(actions)
 
 
+    print(tf_next_states)
     stpl = agent.predict(tf_next_states)
     targets = np.add(np.multiply(np.expand_dims(np.max(stpl, 1), axis = 1), 0.99), tf_rewards)
 
