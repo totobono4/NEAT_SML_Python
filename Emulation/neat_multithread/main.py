@@ -8,8 +8,7 @@ from multiprocessing import Value
 import pygame
 import pickle
 
-utilsPath = Path(Path().cwd().parent, 'utils')
-sys.path.append(os.path.dirname(utilsPath))
+sys.path.append(str(Path(Path().cwd().parent)))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
 import utils.inputManager as manager
