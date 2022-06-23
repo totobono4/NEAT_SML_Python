@@ -6,8 +6,7 @@ from pathlib import Path
 import numpy as np
 from pyboy import PyBoy
 
-utilsPath = Path(Path().cwd().parent, 'utils')
-sys.path.append(os.path.dirname(utilsPath))
+sys.path.append(str(Path(Path().cwd().parent)))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
 import utils.inputManager as manager
