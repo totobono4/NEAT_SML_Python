@@ -11,8 +11,8 @@ sys.path.append(str(Path(Path().cwd().parent)))
 import utils.learnOptions as options
 import utils.dataExtractor as extractor
 
-PYGAME_SCREEN_WIDTH = 750
-PYGAME_SCREEN_HEIGH = 750
+PYGAME_SCREEN_WIDTH = 400
+PYGAME_SCREEN_HEIGH = 400
 
 # Makes us able to import PyBoy from the directory below
 SML_File = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -36,12 +36,23 @@ else:
     print("Usage: python SML_IA.py [ROM file] [Camera Size]")
     exit(1)
 
+# Check if the config is given through argv
+if len(sys.argv) > 3:
+    save_state = Path( sys.argv[3] )
+else:
+    print("Usage: python SML_IA.py [ROM file] [config file] [save state file]")
+    exit(1)
+
 quiet = "--quiet" in sys.argv
 debugging = "--debug" in sys.argv
 pyboy = PyBoy(SML_File.as_posix(), game_wrapper=True, window_type="headless" if quiet else "SDL2", debug=debugging)
 pyboy.set_emulation_speed(1)
 sml = pyboy.game_wrapper()
 sml.start_game()
+
+f_save_state = open(save_state, "rb")
+pyboy.load_state(f_save_state)
+f_save_state.close()
 
 pygame.init()
 screen = pygame.display.set_mode([PYGAME_SCREEN_HEIGH, PYGAME_SCREEN_WIDTH], pygame.RESIZABLE)
