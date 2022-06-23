@@ -1,69 +1,152 @@
-from tabnanny import verbose
-import keras
+from tkinter import Variable
+from tensorflow import keras
 import tensorflow as tf
 import random
 import numpy as np
+import copy
+from pathlib import Path
+import sys
+import os
+utilsPath = Path(Path().cwd().parent, 'utils')
+sys.path.append(os.path.dirname(utilsPath))
+import utils.dataExtractor as extractor
+import utils.learnOptions as options
+import math
+
+history = keras.callbacks.History()
+
+tf.get_logger().setLevel('ERROR')
+tf.autograph.set_verbosity(3)
+
+states = [] #the states database
+rewards = [] #the rewards database
+rewards_mean = [] #the reward database for mean reward
+next_states = [] #the next state database
+actions = [] #the actions database
 
 epsilon = 1
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
-def getAgent(state_shape, action_shape):
-    learning_rate = 0.001
-    init = tf.keras.initializers.HeUniform()
+def getAgent(state_shape, action_shape): #retrieves an agent (model)
     model = keras.Sequential()
-    model.add(keras.layers.Dense(24, input_shape=state_shape, activation='relu', kernel_initializer = init))
-    model.add(keras.layers.Dense(12, activation='relu', kernel_initializer=init))
-    model.add(keras.layers.Dense(action_shape, activation='linear', kernel_initializer=init))
-    model.compile(loss=tf.keras.losses.Huber(), optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), metrics=['accuracy'])
+    model.add(keras.layers.Dense(32, input_dim=state_shape, activation='relu'))
+    model.add(keras.layers.Dense(64, activation='relu'))
+    model.add(keras.layers.Dense(units=128, activation='relu'))
+    model.add(keras.layers.Dense(action_shape, activation='linear'))
+    model.compile(optimizer=optimizer, loss='mse')
     return model
 
-def getSolution(agent : keras.Sequential, state, actions):
-    result = []
+def getSolution(agent : keras.Sequential, state, actions): #gets an action from a state using an agent, with epsilon-greedy algorithm
+    act = None
     if random.randrange(0, 1) <= epsilon:
-        choices =  random.choices(actions)
-        result = [1 if x in choices else 0 for x in actions]
+        act =  random.choice(actions)
     else:
-        result : agent.predict(state)
-        resActions = []
-        best = None
-        bestres = 0
-        for i in range(len(result)):
-            if best is None or result[i] > bestres:
-                best = i
-                bestres = result[i]
-        resActions.append(best)
-        for i in range(len(result)):
-            if abs(result[i] - bestres) < 0.1:
-                resActions.append(i)
-        result = [1 if x in resActions else 0 for x in actions]
-    return result
+        tensor = np.array([state])
+        result = agent.predict(tensor, verbose="0")
+        max = result.argMax(1)
+        act = max.buffer().values[0]
 
+    return act
+
+#trains the model
+def train(agent, sml, acts, stepper, batch_size = 100, episodes = 150, steps = 10000, maxsave = 100000):
+
+    global epsilon
+
+    st = extractor.readLevelInfos(sml, options)["tiles"] #extracts a game state
+    st2 = None
+    for epi in range(episodes): #for each episode
+        sml.reset_game() #set game to start state
+        reward = 0
+        step = 0
+        stop = False
+        lastState = st
+        beginprogress = sml.level_progress
+        while step < steps:
+            act = getSolution(agent, st, acts)
+            reward = stepper(act, beginprogress) #step in game
+            st2 = extractor.readLevelInfos(sml, options) #extract next state
+            if st2 is None or None in st2 or sml.lives_left < 2:
+                st2 =  np.copy(lastState)
+                stop = True
+            else:
+                laststate = st2["tiles"]     
+                st2 = st2["tiles"]       
+
+            mask = [1 if a == act else 0 for a in range(len(acts))] #use action as a decimal mask
             
+            #save data in a random spot of our database
+            index = random.randint(0, len(states))
+            states.insert(index, st)
+            rewards.insert(index, [reward])
+            rewards_mean.insert(index, reward)
+            next_states.insert(index, st2)
+            actions.insert(index, mask)
 
-def train(replay_memory, model, target_model):
-    learning_rate = 0.7 # Learning rate
-    discount_factor = 0.618
+            if len(states) > maxsave: #if database is too big, remove a random row
+                del states[index]
+                del rewards[index]
+                del rewards_mean[index]
+                del next_states[index]
+                del actions[index]
+            st = st2 #go to next state
+            step += 1
+            if stop: #if mario died, reset the game
+                stop = False
+                sml.reset_game()
 
-    MIN_REPLAY_SIZE = 1000
-    if len(replay_memory) < MIN_REPLAY_SIZE:
-        return
 
-    batch_size = 64 * 2
-    mini_batch = random.sample(replay_memory, batch_size)
-    current_states = np.array([transition[0] for transition in mini_batch])
-    current_qs_list = model.predict(current_states, verbose=0)
-    new_current_states = np.array([transition[3] for transition in mini_batch])
-    future_qs_list = target_model.predict(new_current_states, verbose=0)
+        epsilon = max(0.1, epsilon*0.99) #decrement epsilon
 
-    X = []
-    Y = []
-    for index, (observation, actions, reward, new_observation) in enumerate(mini_batch):
-        max_future_q = reward + discount_factor * np.max(future_qs_list[index])
+        if epi % 5 == 0:
+            print("------------stats------------")
+            print("rewards mean : "+str(np.mean(rewards_mean)))
+            print("episode "+str(epi))
+            print("-----------------------------")
+            train_model(agent, states, rewards, next_states, actions, batch_size)
 
-        current_qs = current_qs_list[index]
-        for action in actions:
-            current_qs[action] = (1 - learning_rate) * current_qs[action] + learning_rate * max_future_q
+        sml.reset_game() #reset to initial game state
+        tot_reward = 0
+        stuckcount = 0
+        state = extractor.readLevelInfos(sml, options)["tiles"] #extract initial game state
+        while True:
+            out = agent.predict(np.array([state]), verbose="0") #use model to get action from current state
+            act = 0
+            maxout = out[0] #get the action the model is the most "sur" about
+            for i in range(1, len(out)):
+                if out[i] > maxout:
+                    act = i
+                    maxout = out[i]
+            reward = stepper(act, beginprogress) #ste in game and get reward
+            state = extractor.readLevelInfos(sml, options)["tiles"]
+            tot_reward += reward
+            if sml.lives_left < 2 or stuckcount >= 150: #if end condition met, exit play mode
+                break
+            elif sml.level_progress < sml._level_progress_max: #if no progress, increment kill counter
+                stuckcount+=1
+        print("Game end : reward : "+str(tot_reward))
 
-        X.append(observation)
-        Y.append(current_qs)
-    model.fit(np.array(X), np.array(Y), batch_size=batch_size, verbose=0, shuffle=True)
+#make the model train
+def train_model(agent, states, rewards, next_states, actions, batch_size):
+    tf_states = np.array(states)
+    tf_rewards = np.array(rewards)
+    tf_next_states = np.array(next_states)
+    tf_actions = np.array(actions)
+    
+    meanloss = 0
 
+    mse = tf.keras.losses.MeanSquaredError()
+    for b in range(len(states) - batch_size + 1, len(states)): #split database in batches
+
+        reward = tf_rewards[b]
+        reward = reward + 0.99 * np.amax(agent.predict(np.array([tf_next_states[b]]), verbose="0")[0])
+
+        target = agent.predict(np.array([tf_states[b]]), verbose="0")
+        target[0][tf_actions[b]] = reward
+
+        #minimize loss using custom loss function
+        agent.fit(np.array([tf_states[b]]), target, verbose="0", use_multiprocessing=True, callbacks=[history])
+
+    meanloss = np.mean(history.history["loss"])
+    print("Mean loss : "+str(meanloss))
+    history.history["loss"]=[]
