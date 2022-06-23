@@ -13,6 +13,8 @@ import utils.dataExtractor as extractor
 import utils.learnOptions as options
 import math
 
+history = keras.callbacks.History()
+
 tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(3)
 
@@ -27,10 +29,11 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
 def getAgent(state_shape, action_shape): #retrieves an agent (model)
     model = keras.Sequential()
-    model.add(keras.layers.Input(shape=(state_shape,)))
-    model.add(keras.layers.Dense(32, activation='relu'))
+    model.add(keras.layers.Dense(32, input_dim=state_shape, activation='relu'))
+    model.add(keras.layers.Dense(64, activation='relu'))
+    model.add(keras.layers.Dense(units=128, activation='relu'))
     model.add(keras.layers.Dense(action_shape, activation='linear'))
-    model.compile(optimizer=optimizer, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy'], run_eagerly=True)
+    model.compile(optimizer=optimizer, loss='mse')
     return model
 
 def getSolution(agent : keras.Sequential, state, actions): #gets an action from a state using an agent, with epsilon-greedy algorithm
@@ -39,7 +42,7 @@ def getSolution(agent : keras.Sequential, state, actions): #gets an action from 
         act =  random.choice(actions)
     else:
         tensor = np.array([state])
-        result = agent.predict(tensor)
+        result = agent.predict(tensor, verbose="0")
         max = result.argMax(1)
         act = max.buffer().values[0]
 
@@ -50,7 +53,7 @@ def train(agent, sml, acts, stepper, batch_size = 100, episodes = 150, steps = 1
 
     global epsilon
 
-    st = extractor.readLevelInfos(sml, options) #extracts a game state
+    st = extractor.readLevelInfos(sml, options)["tiles"] #extracts a game state
     st2 = None
     for epi in range(episodes): #for each episode
         sml.reset_game() #set game to start state
@@ -64,29 +67,28 @@ def train(agent, sml, acts, stepper, batch_size = 100, episodes = 150, steps = 1
             reward = stepper(act, beginprogress) #step in game
             st2 = extractor.readLevelInfos(sml, options) #extract next state
             if st2 is None or None in st2 or sml.lives_left < 2:
-                st2 = lastState
+                st2 =  np.copy(lastState)
                 stop = True
             else:
-                laststate = st2
-                
+                laststate = st2["tiles"]     
+                st2 = st2["tiles"]       
 
             mask = [1 if a == act else 0 for a in range(len(acts))] #use action as a decimal mask
             
             #save data in a random spot of our database
             index = random.randint(0, len(states))
-            states.insert(index, st["tiles"])
+            states.insert(index, st)
             rewards.insert(index, [reward])
             rewards_mean.insert(index, reward)
-            next_states.insert(index, st2["tiles"])
+            next_states.insert(index, st2)
             actions.insert(index, mask)
 
             if len(states) > maxsave: #if database is too big, remove a random row
-                states.remove(index)
-                rewards.remove(index)
-                rewards_mean.remove(index)
-                next_states.remove(index)
-                actions.remove(index)
-
+                del states[index]
+                del rewards[index]
+                del rewards_mean[index]
+                del next_states[index]
+                del actions[index]
             st = st2 #go to next state
             step += 1
             if stop: #if mario died, reset the game
@@ -108,7 +110,7 @@ def train(agent, sml, acts, stepper, batch_size = 100, episodes = 150, steps = 1
         stuckcount = 0
         state = extractor.readLevelInfos(sml, options)["tiles"] #extract initial game state
         while True:
-            out = agent.predict(np.array([state])) #use model to get action from current state
+            out = agent.predict(np.array([state]), verbose="0") #use model to get action from current state
             act = 0
             maxout = out[0] #get the action the model is the most "sur" about
             for i in range(1, len(out)):
@@ -121,38 +123,30 @@ def train(agent, sml, acts, stepper, batch_size = 100, episodes = 150, steps = 1
             if sml.lives_left < 2 or stuckcount >= 150: #if end condition met, exit play mode
                 break
             elif sml.level_progress < sml._level_progress_max: #if no progress, increment kill counter
-                print(str(150-stuckcount)+" frames before death ...")
                 stuckcount+=1
         print("Game end : reward : "+str(tot_reward))
 
 #make the model train
 def train_model(agent, states, rewards, next_states, actions, batch_size):
-    print(next_states)
-    size = len(next_states) #convert list into np arrays
     tf_states = np.array(states)
     tf_rewards = np.array(rewards)
     tf_next_states = np.array(next_states)
     tf_actions = np.array(actions)
+    
+    meanloss = 0
 
+    mse = tf.keras.losses.MeanSquaredError()
+    for b in range(len(states) - batch_size + 1, len(states)): #split database in batches
 
-    stpl = agent.predict(tf_next_states)
-    targets = np.add(np.multiply(np.expand_dims(np.max(stpl, 1), axis = 1), 0.99), tf_rewards) #compute target
+        reward = tf_rewards[b]
+        reward = reward + 0.99 * np.amax(agent.predict(np.array([tf_next_states[b]]), verbose="0")[0])
 
-    for b in range(0, size, batch_size): #split database in batches
-
-        to = batch_size if (b+batch_size)<size else (size-b) #take database batches
-        tf_states_b = tf.constant(np.array(tf_states[b:to]).astype(np.float32))
-        tf_action_b = np.array(tf_actions[b:to]).astype(np.float32)
-        tf_targets_b = tf.constant(np.array(targets[b:to]).astype(np.float32))
-
-        #loss reduce part
-        inputs = tf.Variable(tf_action_b)
-
-        with tf.GradientTape() as tape:
-
-            tape.watch(inputs)
-
-            loss = tf.square(agent(tf_states_b) - tf_targets_b) * inputs
+        target = agent.predict(np.array([tf_states[b]]), verbose="0")
+        target[0][tf_actions[b]] = reward
 
         #minimize loss using custom loss function
-        optimizer.minimize(loss, var_list=inputs, tape=tape)
+        agent.fit(np.array([tf_states[b]]), target, verbose="0", use_multiprocessing=True, callbacks=[history])
+
+    meanloss = np.mean(history.history["loss"])
+    print("Mean loss : "+str(meanloss))
+    history.history["loss"]=[]
