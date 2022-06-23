@@ -14,7 +14,7 @@ import utils.inputManager as manager
 
 infos = {}
 
-PYGAME_SCREEN_WIDTH = 600
+PYGAME_SCREEN_WIDTH = 700
 PYGAME_SCREEN_HEIGH = 400
 
 root = __file__
