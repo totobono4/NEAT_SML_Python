@@ -78,7 +78,7 @@ def step(act, previous):
 def main():
 	agent = network.getAgent(reduceSize*reduceSize, len(outputNames)) #generate agent with project scale
 	for i in range(100000): #trains the agent several times
-		network.train(agent, sml, outputNames.values(), step)
+		network.train(agent, sml, list(outputNames.values()), step)
 		
 
 
