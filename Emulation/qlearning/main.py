@@ -79,7 +79,7 @@ def step(act, previous):
 def main():
 	agent = network.getAgent(reduceSize*reduceSize, len(outputNames))
 	for i in range(100000):
-		network.train(agent, sml, list(outputNames.values()), reduceSize*reduceSize, len(outputNames), step)
+		network.train(agent, sml, len(outputNames), step)
 		
 
 
