@@ -51,6 +51,14 @@ else:
     print("Usage: python SML_IA.py [ROM file] [config file]")
     exit(1)
 
+# Check if the config is given through argv
+if len(sys.argv) > 3:
+    save_state = Path( sys.argv[3] )
+    infos['save_state file'] = str(save_state.name)
+else:
+    print("Usage: python SML_IA.py [ROM file] [config file] [save state file]")
+    exit(1)
+
 quiet = "--quiet" in sys.argv
 debugging = "--debug" in sys.argv
 flagInfos = "--Infos" in sys.argv
@@ -62,9 +70,9 @@ sml.start_game()
 infos['generation'] = -1
 infos['fitnessMax'] = sml.fitness
 
-debut = open("./debut.save", "wb")
-pyboy.save_state(debut)
-debut.close()
+f_save_state = open(save_state, "rb")
+pyboy.load_state(f_save_state)
+f_save_state.close()
 
 if not flagInfos:
     PYGAME_SCREEN_WIDTH = 400
@@ -302,10 +310,10 @@ def runGenome(genome, config):
         fitness += sml.coins*10
     if options.use_score_in_fitness:
         fitness += sml.score/10
-    debut = open("./debut.save", "rb")
-    pyboy.load_state(debut)
+    f_save_state = open(save_state, "rb")
+    pyboy.load_state(f_save_state)
+    f_save_state.close()
     pyboy.tick()
-    debut.close()
     return fitness
 
 def step(genomes, config):
@@ -337,8 +345,6 @@ def run(config_path):
     print('\nOutput:')
 
     p = neat.Checkpointer.restore_checkpoint('./checkpoints/neat-checkpoint-1')
-    pyboy.set_emulation_speed(0)
-
     p.run(step, 10)
 
 if __name__ == '__main__':
