@@ -340,7 +340,7 @@ def run(config_path):
     pop.add_reporter(stats)
     pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 
-    winner = pop.run(step, 1)
+    winner = pop.run(step)
 
     with open(f"winners/winner_{config_File.stem}.pkl", "wb") as f:
         pickle.dump(winner, f)
