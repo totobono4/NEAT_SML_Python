@@ -332,8 +332,7 @@ def run(config_path):
     options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
     pop = neat.Population(config)
-    #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-pipe-pass')
-    #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-glitch-wall-jump')
+    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-potential1')
 
     # Add a stdout reporter to show progress in the terminal.
     pop.add_reporter(neat.StdOutReporter(True))
@@ -341,7 +340,7 @@ def run(config_path):
     pop.add_reporter(stats)
     pop.add_reporter(neat.Checkpointer(1, filename_prefix='./checkpoints/neat-checkpoint-'))
 
-    winner = pop.run(step)
+    winner = pop.run(step, 1)
 
     with open(f"winners/winner_{config_File.stem}.pkl", "wb") as f:
         pickle.dump(winner, f)
