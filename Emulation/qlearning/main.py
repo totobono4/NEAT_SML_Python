@@ -1,14 +1,10 @@
-from collections import deque
-from functools import total_ordering
 import sys
 import os
-from time import sleep
 import network
 from pathlib import Path
 import numpy as np
 from pyboy import PyBoy
-import gym
-import math
+import io
 
 sys.path.append(str(Path(Path().cwd().parent)))
 import utils.learnOptions as options
@@ -60,8 +56,7 @@ episodes = 300
 batch = 1000
 observeTime = 400*35 #lenght of a game
 
-#steps in the game
-def step(act, previous):
+def executAction(act):	
 	buttonpresses = { #transforms raw network data into game controll data
 		"a":outputNames["a"] == act,
 		"b":outputNames["b"] == act,
@@ -72,15 +67,43 @@ def step(act, previous):
 	}
 	manager.sendInputs(buttonpresses, pyboy, options) #press on buttons
 	pyboy.tick()
+
+#steps in the game
+def step(act, previous):
+	executAction(act)
 	return (sml.level_progress - previous)*20 #compute reward
 
+rewindstate = io.BytesIO()
+
+def createState(model : network.MarioAi):
+	currentState = extractor.readLevelInfos(sml, options)["tiles"]
+	states = currentState
+	rewindsize = 0
+	tonextstate = currentState
+	rewindstate.seek(0)
+	pyboy.save_state(rewindstate)
+	for _ in range(1, model.window_size):
+		executAction(model.getSolution(currentState))
+		next = extractor.readLevelInfos(sml, options)["tiles"]
+		if next is not None:
+			states += next
+			currentState = next
+			rewindsize += 1
+		else:
+			return None
+	
+	rewindstate.seek(0)
+	pyboy.load_state(rewindstate)
+	
+	executAction(model.getSolution(tonextstate))
+	return np.array([states])
 
 def main():
-	agent = network.getAgent(reduceSize*reduceSize, len(outputNames)) #generate agent with project scale
+	agent = network.MarioAi(reduceSize*reduceSize, list(outputNames.values()), state_creator=createState) #generate agent with project scale
 	
-	agent.summary()
+	agent.agent.summary()
 	for i in range(100000): #trains the agent several times
-		network.train(agent, sml, list(outputNames.values()), step)
+		agent.train(sml, step)
 		
 
 
