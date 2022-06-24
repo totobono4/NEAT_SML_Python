@@ -231,7 +231,8 @@ def displayNetwork(inputs, outputs, hiddens, connections, outs, tilesvector):
             (150,150,150) if not active else (0,255,0) if weight > 0 else (255,0,0),
             perceptrons[id1],
             perceptrons[id2],
-            math.trunc(abs(weight)+1) * sizex // 10 if active else 1)
+            math.trunc(abs(weight)+1) * sizex // 10 if active else 1
+        )
 
     if flagInfos:
         for info in range(len(list(infos.keys()))):
@@ -332,8 +333,9 @@ def run(config_path):
     options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
     pop = neat.Population(config)
-    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-pipe-pass')
+    #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-pipe-pass')
     #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-glitch-wall-jump')
+    #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-potential1')
 
     # Add a stdout reporter to show progress in the terminal.
     pop.add_reporter(neat.StdOutReporter(True))
