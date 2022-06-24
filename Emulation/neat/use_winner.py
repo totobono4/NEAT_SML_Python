@@ -299,7 +299,8 @@ def replay_genome(config_path, genome_path):
             manager.sendInputs(manipulations, pyboy, options)
             
             graph = buildGraph(config.genome_config.input_keys, config.genome_config.output_keys, genome)
-            displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, tiles)
+            if flagDisplay:
+                displayNetwork(config.genome_config.input_keys, config.genome_config.output_keys, graph[1], graph[0], manipulations, tiles)
         pyboy.tick()
         infos['fitness'] = sml.fitness
 
