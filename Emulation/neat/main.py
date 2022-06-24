@@ -332,7 +332,7 @@ def run(config_path):
     options.reduceSize = int(math.sqrt(config.genome_config.num_inputs))
 
     pop = neat.Population(config)
-    pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-potential1')
+    #pop = neat.Checkpointer.restore_checkpoint('./checkpoints/ch-potential1')
 
     # Add a stdout reporter to show progress in the terminal.
     pop.add_reporter(neat.StdOutReporter(True))
