@@ -85,7 +85,7 @@ def createState(model : network.MarioAi):
 	for _ in range(1, model.window_size):
 		executAction(model.getSolution(currentState))
 		next = extractor.readLevelInfos(sml, options)["tiles"]
-		if next is not None:
+		if next is not None and states is not None:
 			states += next
 			currentState = next
 			rewindsize += 1

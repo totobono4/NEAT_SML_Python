@@ -20,7 +20,7 @@ tf.autograph.set_verbosity(3)
 
 class MarioAi:
 
-    def __init__(self, state_shape, actions, window_size=2, state_creator = lambda model: [[0]*model.state_shape]*model.window_size):
+    def __init__(self, state_shape, actions, window_size=2, savedir = "save", state_creator = lambda model: [[0]*model.state_shape]*model.window_size):
         
         self.dataset = [] #the database
 
@@ -29,6 +29,10 @@ class MarioAi:
         self.action_shape=len(actions)
         self.actions=actions
         self.window_size = window_size
+        self.savecallback = tf.keras.callbacks.ModelCheckpoint(filepath=savedir,
+                                                 save_weights_only=True,
+                                                 verbose=1)
+
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
         self.agent = self.getAgent()
@@ -104,6 +108,8 @@ class MarioAi:
                 print("-----------------------------")
                 self.train_model(batchsize)
 
+
+
                 sml.reset_game() #reset to initial game state
                 tot_reward = 0
                 stuckcount = 0
@@ -141,7 +147,7 @@ class MarioAi:
             print("Aggregating learning factors : "+str(i)+"/"+str(batchsize), end="\r")
             i+=1
             
-            self.agent.fit(state, target, batch_size=len(self.dataset), verbose="0", use_multiprocessing=True, callbacks=[history], workers=4)
+            self.agent.fit(state, target, batch_size=len(self.dataset), verbose="0", use_multiprocessing=True, callbacks=[history, self.savecallback], workers=4)
 
         meanloss = np.mean(history.history["loss"])
         print("\r")
