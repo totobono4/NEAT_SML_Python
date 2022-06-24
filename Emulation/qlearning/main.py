@@ -71,6 +71,8 @@ def executAction(act):
 #steps in the game
 def step(act, previous):
 	executAction(act)
+	if abs(sml.level_progress - previous) == 0:
+		return -10
 	return (sml.level_progress - previous)*20 #compute reward
 
 rewindstate = io.BytesIO()
