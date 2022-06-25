@@ -16,15 +16,11 @@ PYGAME_SCREEN_HEIGH = 750
 
 root = __file__
 
-reduceSize = 5
-
 outputNames = {
 	"a":0,
 	"b":1,
-	"up":2,
-	"down":3,
-	"left":4,
-	"right":5
+	"left":2,
+	"right":3
 }
 
 # Makes us able to import PyBoy from the directory below
@@ -60,8 +56,8 @@ def executAction(act):
 	buttonpresses = { #transforms raw network data into game controll data
 		"a":outputNames["a"] == act,
 		"b":outputNames["b"] == act,
-		"up":outputNames["up"] == act,
-		"down":outputNames["down"] == act,
+		"up":False,
+		"down":False,
 		"left":outputNames["left"] == act,
 		"right":outputNames["right"] == act,
 	}
@@ -71,41 +67,23 @@ def executAction(act):
 #steps in the game
 def step(act, previous):
 	executAction(act)
-	if abs(sml.level_progress - previous) == 0:
-		return -10
-	return (sml.level_progress - previous)*20 #compute reward
+	return (sml.level_progress - previous) #compute reward
 
 rewindstate = io.BytesIO()
 
 def createState(model : network.MarioAi):
 	currentState = extractor.readLevelInfos(sml, options)["tiles"]
-	states = currentState
-	rewindsize = 0
-	tonextstate = currentState
-	rewindstate.seek(0)
-	pyboy.save_state(rewindstate)
-	for _ in range(1, model.window_size):
-		executAction(model.getSolution(currentState))
-		next = extractor.readLevelInfos(sml, options)["tiles"]
-		if next is not None and states is not None:
-			states += next
-			currentState = next
-			rewindsize += 1
-		else:
-			return None
-	
-	rewindstate.seek(0)
-	pyboy.load_state(rewindstate)
-	
-	executAction(model.getSolution(tonextstate))
-	return np.array([states])
+	if currentState is None:
+		return None
+	return np.array([currentState])
 
 def main():
-	agent = network.MarioAi(reduceSize*reduceSize, list(outputNames.values()), state_creator=createState) #generate agent with project scale
+	options.reduceSize = 20
+	agent = network.MarioAi(options.reduceSize*options.reduceSize, list(outputNames.values()), actiondistrib=[0.3, 0.2, 0.1, 0.4], state_creator=createState) #generate agent with project scale
 	
 	agent.agent.summary()
 	for i in range(100000): #trains the agent several times
-		agent.train(sml, step)
+		agent.train(sml, pyboy, step)
 		
 
 
